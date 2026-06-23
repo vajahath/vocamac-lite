@@ -395,6 +395,28 @@ final class MockTextInjector: TextInjecting {
     }
 }
 
+// MARK: - MockStatsManager
+
+@MainActor
+final class MockStatsManager: StatsManaging, ObservableObject {
+    @Published var stats: UserStats = UserStats()
+
+    var recordCallCount = 0
+    var resetCallCount = 0
+
+    var objectWillChangePublisher: AnyPublisher<Void, Never> {
+        objectWillChange.eraseToAnyPublisher()
+    }
+
+    func recordTranscription(_ transcription: VocaTranscription) {
+        recordCallCount += 1
+    }
+
+    func resetStats() {
+        resetCallCount += 1
+    }
+}
+
 // MARK: - Test Helper
 
 extension AppState {
@@ -412,6 +434,7 @@ extension AppState {
         let permissionManager = MockPermissionManager()
         let cursorOverlay = MockCursorOverlay()
         let textInjector = MockTextInjector()
+        let statsManager = MockStatsManager()
 
         let mocks = TestMocks(
             audioEngine: audioEngine,
@@ -421,7 +444,8 @@ extension AppState {
             cursorOverlay: cursorOverlay,
             modelManager: modelManager,
             whisperService: whisperService,
-            textInjector: textInjector
+            textInjector: textInjector,
+            statsManager: statsManager
         )
         let appState = AppState(
             audioEngine: audioEngine,
@@ -431,6 +455,7 @@ extension AppState {
             modelManager: modelManager,
             soundManager: soundManager,
             cursorOverlay: cursorOverlay,
+            statsManager: statsManager,
             permissionManager: permissionManager,
             skipSystemIntegration: true
         )
@@ -447,4 +472,5 @@ struct TestMocks {
     let modelManager: MockModelManager
     let whisperService: MockWhisperService
     let textInjector: MockTextInjector
+    let statsManager: MockStatsManager
 }
