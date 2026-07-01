@@ -149,6 +149,34 @@ struct GeneralSettingsTab: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            // Custom Vocabulary
+            Section("Custom Vocabulary") {
+                TextEditor(text: $appState.customVocabulary)
+                    .font(.body)
+                    .frame(minHeight: 90)
+                    .overlay(alignment: .topLeading) {
+                        if appState.customVocabulary.isEmpty {
+                            Text("kubectl, PostgreSQL, nginx, Grafana")
+                                .foregroundStyle(.tertiary)
+                                .padding(.top, 8)
+                                .padding(.leading, 5)
+                                .allowsHitTesting(false)
+                        }
+                    }
+
+                let count = WhisperService.vocabularyTerms(from: appState.customVocabulary).count
+                Text(count == 0
+                    ? "Add names, jargon, or proper nouns (one per line, or comma-separated) that get mis-transcribed. VocaMac hints these to the model so it spells them right."
+                    : "\(count) term\(count == 1 ? "" : "s"). Keep the list short, since the model can only use the first 50 to 100 words as a hint.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("For best results, enter terms in the language you dictate and set a matching Transcription Language above. In Auto-detect, the terms can also nudge which language VocaMac picks.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Behavior") {
                 Toggle("Launch at Login", isOn: Binding(
                     get: { appState.launchAtLogin },
