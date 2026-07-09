@@ -601,6 +601,21 @@ final class AudioEngineForceResetTests: XCTestCase {
 
 final class AudioEngineDeviceChangeTests: XCTestCase {
 
+    func testStartupConfigurationChangeWindow() {
+        let cases: [(elapsed: TimeInterval, expected: Bool)] = [
+            (0.10, true),
+            (AudioEngine.startupConfigurationChangeRecoveryWindow + 0.01, false),
+            (-0.01, false)
+        ]
+
+        for testCase in cases {
+            XCTAssertEqual(
+                AudioEngine.shouldTreatAsStartupConfigurationChange(elapsedSinceRecordingStart: testCase.elapsed),
+                testCase.expected
+            )
+        }
+    }
+
     func testOnAudioDeviceChangedCallbackExists() {
         // Verify the callback property can be set
         let engine = AudioEngine()

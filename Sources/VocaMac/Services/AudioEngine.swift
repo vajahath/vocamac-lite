@@ -25,6 +25,8 @@ final class AudioEngine {
     private let bufferQueue = DispatchQueue(label: "com.vocamac.audio-buffer", qos: .userInteractive)
     private let lifecycleQueue = DispatchQueue(label: "com.vocamac.audio-engine.lifecycle", qos: .userInitiated)
 
+    static let startupConfigurationChangeRecoveryWindow: TimeInterval = 1.0
+
     var isCurrentlyRecording: Bool {
         lifecycleQueue.sync { _isCurrentlyRecording }
     }
@@ -128,6 +130,14 @@ final class AudioEngine {
             VocaLogger.info(.audioEngine, "Audio configuration changed (device plug/unplug or route change)")
 
             let wasRecording = self._isCurrentlyRecording
+
+            let elapsedSinceRecordingStart = Date().timeIntervalSince(self.recordingStartTime)
+            if wasRecording,
+               self.engine?.isRunning == true,
+               Self.shouldTreatAsStartupConfigurationChange(elapsedSinceRecordingStart: elapsedSinceRecordingStart) {
+                VocaLogger.info(.audioEngine, "Ignoring startup audio configuration change because the engine is still running")
+                return
+            }
 
             if wasRecording {
                 VocaLogger.warning(.audioEngine, "Configuration changed while recording — forcing stop and reset")
@@ -364,6 +374,17 @@ final class AudioEngine {
                 self?.onAudioDeviceChanged?()
             }
         }
+    }
+
+    /// Returns whether a configuration notification is close enough to recording
+    /// startup to be treated as device/profile setup churn instead of a live
+    /// device interruption.
+    static func shouldTreatAsStartupConfigurationChange(
+        elapsedSinceRecordingStart: TimeInterval,
+        recoveryWindow: TimeInterval = startupConfigurationChangeRecoveryWindow
+    ) -> Bool {
+        elapsedSinceRecordingStart >= 0
+            && elapsedSinceRecordingStart <= recoveryWindow
     }
 
     // MARK: - Audio Processing
