@@ -118,13 +118,6 @@ final class AppStateRecordingTests: XCTestCase {
                       "Should return to idle when audio data is empty")
     }
 
-    func testSelectedModelSizeDefault() {
-        let (appState, _) = AppState.makeTestState()
-
-        XCTAssertEqual(appState.selectedModelSize, ModelSize.tiny.rawValue,
-                      "Default model size should be tiny")
-    }
-
     func testPreserveClipboardDefault() {
         let (appState, _) = AppState.makeTestState()
 
@@ -190,27 +183,11 @@ final class AppStateRecordingTests: XCTestCase {
                       "Default max recording duration should be 60 seconds")
     }
 
-    func testAvailableModelsPopulated() {
-        let (appState, _) = AppState.makeTestState()
-
-        XCTAssertFalse(appState.availableModels.isEmpty,
-                      "Available models should be populated on init")
-        XCTAssertEqual(appState.availableModels.count, ModelSize.allCases.count,
-                      "Should have one entry per ModelSize")
-    }
-
     func testSystemCapabilitiesDetected() {
         let (appState, _) = AppState.makeTestState()
 
         XCTAssertNotNil(appState.systemCapabilities,
                        "System capabilities should be detected on init")
-    }
-
-    func testDeviceRecommendedModelSet() {
-        let (appState, _) = AppState.makeTestState()
-
-        XCTAssertNotNil(appState.deviceRecommendedModel,
-                       "Device recommended model should be set on init")
     }
 
     func testPermissionManagerIntegration() {

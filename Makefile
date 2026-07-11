@@ -39,22 +39,21 @@ clean:
 	@rm -rf dist
 	@echo "✅ Clean complete"
 
-## Reset all local VocaMac data (models, cache, preferences) — app must not be running
+## Reset all local VocaMac data (logs, cache, preferences) — app must not be running
 reset:
 	@if pgrep -x VocaMac > /dev/null 2>&1; then echo "❌ VocaMac is running. Quit it first." && exit 1; fi
 	@echo "⚠️  This will permanently delete all VocaMac local data:"
 	@echo ""
-	@echo "   • Downloaded whisper models (~76MB each)"
 	@echo "   • Debug logs"
 	@echo "   • Cached data"
-	@echo "   • All preferences (selected model, language, onboarding state, etc.)"
+	@echo "   • All preferences (endpoint config, language, onboarding state, etc.)"
 	@echo ""
-	@echo "Next launch will start as if freshly installed (onboarding + bundled tiny model)."
+	@echo "Next launch will start as if freshly installed (onboarding wizard)."
 	@echo ""
 	@bash -c 'read -p "Are you sure? [y/N] " confirm && [ "$$confirm" = "y" ] || (echo "Aborted." && exit 1)'
 	@rm -rf ~/Library/Application\ Support/VocaMac
-	@rm -rf ~/Library/Caches/com.vocamac.app
-	@defaults delete com.vocamac.app 2>/dev/null || true
+	@rm -rf ~/Library/Caches/com.vocamac.lite
+	@defaults delete com.vocamac.lite 2>/dev/null || true
 	@echo "✅ Reset complete — next launch will start fresh"
 
 ## Launch the locally built .app (build first with `make build`)
@@ -69,11 +68,11 @@ help:
 	@echo "  make install      Build + install to /Applications (recommended)"
 	@echo "  make install-cli  Install CLI commands to ~/.local/bin"
 	@echo "  make dmg          Build DMG for distribution (output in dist/)"
-	@echo "  make release VERSION=X.Y.Z  Tag and release (triggers CI signing + notarization)"
+	@echo "  make release VERSION=X.Y.Z  Tag and release (CI builds unsigned DMG + GitHub Release)"
 	@echo "  make test         Run tests"
 	@echo "  make run          Launch the locally built .app"
 	@echo "  make clean        Remove build artifacts"
-	@echo "  make reset        Delete all local app data (models, cache, prefs)"
+	@echo "  make reset        Delete all local app data (logs, cache, prefs)"
 	@echo "  make help         Show this help"
 	@echo ""
 	@echo "Quick start:  make install"

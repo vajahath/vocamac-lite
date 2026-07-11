@@ -11,9 +11,8 @@ import os
 enum LogCategory: String {
     case appState = "AppState"
     case audioEngine = "AudioEngine"
-    case whisperService = "WhisperService"
+    case transcription = "Transcription"
     case hotKeyManager = "HotKeyManager"
-    case modelManager = "ModelManager"
     case soundManager = "SoundManager"
     case textInjector = "TextInjector"
     case cursorOverlay = "CursorOverlay"

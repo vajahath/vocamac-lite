@@ -1,16 +1,15 @@
 #!/bin/bash
-# dist.sh — Build VocaMac and package as a signed, notarized DMG
+# dist.sh — Build VocaMac Lite and package as a DMG
 # Usage: ./scripts/dist.sh [--skip-notarize] [--skip-sign]
 #
 # This script:
-# 1. Builds VocaMac.app via build.sh (Developer ID signed if available)
-# 2. Creates a beautiful DMG with:
-#    - Branded background image with install instructions
-#    - App icon on the left, Applications symlink on the right
-#    - Properly sized and positioned Finder window
-#    - README.txt with permission setup instructions
-# 3. Signs the DMG with Developer ID
-# 4. Notarizes with Apple and staples the ticket
+# 1. Builds VocaMac.app via build.sh
+# 2. Creates a DMG with a branded background, app icon, and Applications symlink
+# 3. Optionally signs and notarizes when a Developer ID certificate is present
+#
+# CI uses --skip-sign: releases are unsigned (ad-hoc) builds. Users remove
+# the quarantine flag on first launch (see README) or install via
+# `brew install --cask vocamac-lite --no-quarantine`.
 #
 # Environment variables:
 #   CODE_SIGN_IDENTITY   — Passed through to build.sh
@@ -18,7 +17,7 @@
 #
 # Flags:
 #   --skip-notarize      — Build and sign but skip notarization (for local testing)
-#   --skip-sign          — Skip signing entirely (ad-hoc only, Gatekeeper will block)
+#   --skip-sign          — Skip signing entirely (ad-hoc build; the default CI path)
 
 set -euo pipefail
 
@@ -195,7 +194,7 @@ echo "▶ Step 4/5: Signing DMG..."
 if [ "$SKIP_SIGN" = true ]; then
     echo "   ⚠️  Skipped (--skip-sign)"
 elif [ -z "$SIGNING_IDENTITY" ]; then
-    echo "   ⚠️  No Developer ID found — DMG not signed (Gatekeeper will block)"
+    echo "   ⚠️  No Developer ID found — unsigned build (remove quarantine on first launch, or install with --no-quarantine)"
 else
     codesign --sign "$SIGNING_IDENTITY" "$FINAL_DMG"
     echo "   Signed with: $SIGNING_IDENTITY"

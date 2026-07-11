@@ -2,7 +2,7 @@
 // VocaMac
 //
 // Settings window for VocaMac configuration.
-// Organized into tabs: General, Models, Audio, Debug, About.
+// Organized into tabs: General, Endpoint, Stats, Audio, Debug, About.
 
 import SwiftUI
 
@@ -18,9 +18,9 @@ struct SettingsView: View {
                     Label("General", systemImage: "gear")
                 }
 
-            ModelSettingsTab()
+            EndpointSettingsTab()
                 .tabItem {
-                    Label("Models", systemImage: "brain")
+                    Label("Endpoint", systemImage: "network")
                 }
 
             StatsSettingsTab()
@@ -165,7 +165,7 @@ struct GeneralSettingsTab: View {
                         }
                     }
 
-                let count = WhisperService.vocabularyTerms(from: appState.customVocabulary).count
+                let count = RemoteTranscriptionService.vocabularyTerms(from: appState.customVocabulary).count
                 Text(count == 0
                     ? "Add names, jargon, or proper nouns (one per line, or comma-separated) that get mis-transcribed. VocaMac hints these to the model so it spells them right."
                     : "\(count) term\(count == 1 ? "" : "s"). Keep the list short, since the model can only use the first 50 to 100 words as a hint.")
@@ -247,337 +247,113 @@ struct PermissionRow: View {
     }
 }
 
-// MARK: - Model Settings
+// MARK: - Endpoint Settings
 
-struct ModelSettingsTab: View {
+struct EndpointSettingsTab: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var processMonitor = ProcessMonitor()
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // System info
-                if let capabilities = appState.systemCapabilities {
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Label("System Information", systemImage: "cpu")
-                                .font(.headline)
-                                .padding(.bottom, 4)
+        Form {
+            Section("Transcription Server") {
+                TextField("Server URL", text: $appState.remoteEndpointURL, prompt: Text("http://192.168.1.10:8000"))
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
 
-                            HStack(spacing: 24) {
-                                SystemInfoPill(icon: "cpu", label: "CPU", value: capabilities.processorName)
-                                SystemInfoPill(icon: "memorychip", label: "RAM", value: "\(capabilities.physicalMemoryGB) GB")
-                                SystemInfoPill(icon: "bolt.fill", label: "Metal", value: capabilities.supportsMetalAcceleration ? "Yes" : "No")
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        }
-                        .padding(4)
+                Picker("API format", selection: $appState.remoteEndpointFormat) {
+                    ForEach(RemoteEndpointFormat.allCases) { format in
+                        Text(format.displayName).tag(format.rawValue)
                     }
                 }
+                .pickerStyle(.radioGroup)
 
-                // Resource usage
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Label("Resource Usage", systemImage: "gauge.with.dots.needle.bottom.50percent")
-                            .font(.headline)
-                            .padding(.bottom, 4)
-
-                        HStack(spacing: 24) {
-                            SystemInfoPill(
-                                icon: "cpu",
-                                label: "CPU",
-                                value: String(format: "%.1f%%", processMonitor.cpuUsage)
-                            )
-                            SystemInfoPill(
-                                icon: "memorychip",
-                                label: "Memory",
-                                value: processMonitor.memoryMB >= 1024
-                                    ? String(format: "%.1f GB", processMonitor.memoryMB / 1024)
-                                    : String(format: "%.0f MB", processMonitor.memoryMB)
-                            )
-                            SystemInfoPill(
-                                icon: "chart.line.uptrend.xyaxis",
-                                label: "Peak",
-                                value: processMonitor.memoryPeakMB >= 1024
-                                    ? String(format: "%.1f GB", processMonitor.memoryPeakMB / 1024)
-                                    : String(format: "%.0f MB", processMonitor.memoryPeakMB)
-                            )
-                            SystemInfoPill(
-                                icon: "arrow.triangle.branch",
-                                label: "Threads",
-                                value: "\(processMonitor.threadCount)"
-                            )
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(4)
-                }
-
-                // Currently active model
-                if let current = appState.currentModel {
-                    GroupBox {
-                        HStack {
-                            Image(systemName: "checkmark.seal.fill")
-                                .foregroundStyle(.green)
-                                .font(.title3)
-                            VStack(alignment: .leading) {
-                                Text("Active Model: \(current.size.displayName)")
-                                    .font(.callout)
-                                    .fontWeight(.semibold)
-                                Text("\(current.size.qualityDescription) quality • \(current.size.fileSizeDescription)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding(4)
-                    }
-                }
-
-                if appState.appStatus == .error, let errorMessage = appState.errorMessage {
-                    GroupBox {
-                        HStack(alignment: .top, spacing: 8) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text(errorMessage)
-                                .font(.caption)
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer()
-                            Button {
-                                appState.errorMessage = nil
-                                appState.appStatus = .idle
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.secondary)
-                            .help("Dismiss")
-                        }
-                        .padding(4)
-                    }
-                }
-
-                // Model list
-                GroupBox {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Label("Available Models", systemImage: "list.bullet")
-                            .font(.headline)
-                            .padding(.bottom, 8)
-                            .padding(.horizontal, 4)
-
-                        ForEach(appState.availableModels) { model in
-                            ModelRow(model: model, appState: appState)
-
-                            if model.id != appState.availableModels.last?.id {
-                                Divider()
-                                    .padding(.horizontal, 4)
-                            }
-                        }
-                    }
-                    .padding(4)
-                }
-
-                // Info text
-                HStack {
-                    Image(systemName: "info.circle")
-                        .foregroundStyle(.secondary)
-                    Text("Models are downloaded from HuggingFace and cached locally. Larger models produce better results but are slower and use more memory.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let recommended = appState.deviceRecommendedModel,
-                   let recommendedSize = appState.modelManager.modelSize(from: recommended) {
-                    HStack {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(.blue)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Recommended for your device: **\(recommendedSize.displayName)**")
-                                .font(.callout)
-                            Text("Based on WhisperKit's tuned variants for your chip — not your RAM.")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                    }
-                }
-
-                HStack {
-                    Image(systemName: "internaldrive")
-                        .foregroundStyle(.secondary)
-                    Text("Model storage: \(appState.modelManager.diskUsageDescription())")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding()
-        }
-    }
-}
-
-struct SystemInfoPill: View {
-    let icon: String
-    let label: String
-    let value: String
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.caption)
-                .fontWeight(.medium)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-struct ModelRow: View {
-    let model: WhisperModelInfo
-    @ObservedObject var appState: AppState
-    @State private var showForceDownloadAlert = false
-
-    var body: some View {
-        HStack {
-            // Status icon
-            Image(systemName: model.statusIconName)
-                .foregroundStyle(model.isActive ? .green : .secondary)
-                .frame(width: 20)
-
-            // Model info
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(model.size.displayName)
-                        .font(.callout)
-                        .fontWeight(model.isActive ? .semibold : .regular)
-
-                    if model.isSupported,
-                       let recommended = appState.deviceRecommendedModel {
-                        if appState.modelManager.modelSize(from: recommended) == model.size {
-                            Text("Recommended")
-                                .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 1)
-                                .background(.blue.opacity(0.2))
-                                .foregroundStyle(.blue)
-                                .cornerRadius(4)
-                        }
-                    }
-
-                    if !model.isSupported {
-                        Text("Experimental")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1)
-                            .background(.orange.opacity(0.2))
-                            .foregroundStyle(.orange)
-                            .cornerRadius(4)
-                            .help("WhisperKit hasn't verified this model on your chip family. It may fail to load, or it may run slower than tuned models.")
-                    }
-                }
-
-                HStack(spacing: 4) {
-                    Text(model.size.fileSizeDescription)
-                    Text("•")
-                    Text(model.size.qualityDescription)
-                    Text("•")
-                    Text("~\(String(format: "%.0f", model.size.ramRequiredGB)) GB RAM")
-                    Text("•")
-                    Text("Speed: \(String(repeating: "⚡", count: max(1, 6 - model.size.relativeSpeed)))")
-                }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            // Download progress or loading indicator
-            if let progress = model.downloadProgress {
-                VStack(spacing: 2) {
-                    ProgressView(value: progress)
-                        .frame(width: 60)
-                        .controlSize(.small)
-                    Text("\(Int(progress * 100))%")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            } else if model.isLoading {
-                VStack(spacing: 2) {
-                    ProgressView()
-                        .frame(width: 60)
-                        .controlSize(.small)
-                    Text(model.loadingStatus)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            // Action button
-            if model.isActive {
-                Label("Active", systemImage: "checkmark")
+                Text(selectedFormat.detailDescription)
                     .font(.caption)
-                    .foregroundStyle(.green)
-            } else if !model.isSupported {
-                if model.isLoading || model.downloadProgress != nil {
-                    EmptyView()
-                } else if model.isDownloaded {
-                    Button("Load Anyway") {
-                        showForceDownloadAlert = true
-                    }
-                    .controlSize(.small)
                     .foregroundStyle(.secondary)
-                } else {
-                    Button("Try Anyway") {
-                        showForceDownloadAlert = true
-                    }
-                    .controlSize(.small)
+
+                Text("Audio is recorded on this Mac (16 kHz mono WAV) and uploaded to this server for transcription. Nothing is transcribed locally.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                }
-            } else if model.isLoading || model.downloadProgress != nil {
-                // Show nothing - progress indicator handles the feedback
-                EmptyView()
-            } else if model.isDownloaded {
-                Button("Load") {
-                    Task { @MainActor in await appState.loadModel(model.size) }
-                }
-                .controlSize(.small)
-                .buttonStyle(.borderedProminent)
-            } else {
-                Button("Download & Load") {
-                    Task { @MainActor in
-                        await appState.downloadModel(model.size)
-                        if appState.availableModels.first(where: { $0.size == model.size })?.isDownloaded == true {
-                            await appState.loadModel(model.size)
+            }
+
+            Section("Authentication (optional)") {
+                SecureField("API key", text: $appState.remoteAPIKey)
+                    .textFieldStyle(.roundedBorder)
+
+                Text("Sent as a Bearer token. Stored unencrypted in app preferences — use HTTPS and a key when the server is outside your trusted network.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Model (optional)") {
+                TextField("Model name", text: $appState.remoteModelName, prompt: Text("Systran/faster-whisper-small"))
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+
+                Text("Sent as the \"model\" field for OpenAI-compatible servers. Leave empty to use the server's default model.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Connection") {
+                HStack {
+                    Button("Test Connection") {
+                        Task { @MainActor in
+                            await appState.checkEndpointReachability()
                         }
                     }
+                    .disabled(appState.remoteEndpointURL.trimmingCharacters(in: .whitespaces).isEmpty
+                              || appState.endpointStatus == .checking)
+
+                    Spacer()
+
+                    EndpointStatusView(status: appState.endpointStatus)
                 }
-                .controlSize(.small)
+
+                Text("Sends a short silent clip through the real transcription path to verify URL, format, and API key.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 4)
-        .alert("Use Experimental Model?", isPresented: $showForceDownloadAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button(model.isDownloaded ? "Load Anyway" : "Download & Load", role: .destructive) {
-                Task { @MainActor in
-                    if !model.isDownloaded {
-                        await appState.downloadModel(model.size)
-                    }
-                    if model.isDownloaded || appState.availableModels.first(where: { $0.size == model.size })?.isDownloaded == true {
-                        await appState.loadModel(model.size)
-                    }
-                }
+        .formStyle(.grouped)
+    }
+
+    private var selectedFormat: RemoteEndpointFormat {
+        RemoteEndpointFormat(rawValue: appState.remoteEndpointFormat) ?? .openAI
+    }
+}
+
+/// Compact status row for the endpoint reachability state.
+struct EndpointStatusView: View {
+    let status: EndpointStatus
+
+    var body: some View {
+        HStack(spacing: 6) {
+            switch status {
+            case .unconfigured:
+                Image(systemName: "circle.dashed")
+                    .foregroundStyle(.secondary)
+                Text("Not configured")
+                    .foregroundStyle(.secondary)
+            case .checking:
+                ProgressView()
+                    .controlSize(.small)
+                Text("Checking…")
+                    .foregroundStyle(.secondary)
+            case .reachable(let summary):
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text(summary)
+                    .foregroundStyle(.green)
+            case .unreachable(let message):
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.red)
+                Text(message)
+                    .foregroundStyle(.red)
+                    .lineLimit(2)
+                    .help(message)
             }
-        } message: {
-            Text("WhisperKit hasn't verified this model on your chip family. It may fail to load, or it may run slower than tuned models.")
         }
+        .font(.caption)
     }
 }
 
@@ -765,11 +541,11 @@ struct AboutTab: View {
                 .foregroundStyle(.blue)
 
             // App name and version
-            Text("VocaMac")
+            Text("VocaMac Lite")
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            Text("Your voice, your Mac, your privacy.\nOpen-source dictation powered by AI.")
+            Text("Menu-bar dictation that transcribes\non your own server.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -821,9 +597,8 @@ struct AboutTab: View {
                         InfoRow2(label: "Architecture", value: capabilities.isAppleSilicon ? "Apple Silicon (ARM64)" : "Intel (x86_64)")
                         InfoRow2(label: "Neural Engine", value: capabilities.supportsMetalAcceleration ? "Available" : "Not Available")
                     }
-                    InfoRow2(label: "Engine", value: "WhisperKit")
-                    InfoRow2(label: "Model", value: appState.whisperService.loadedModelName ?? "Not loaded")
-                    InfoRow2(label: "Storage", value: appState.modelManager.diskUsageDescription())
+                    InfoRow2(label: "Server", value: serverDisplayValue)
+                    InfoRow2(label: "Format", value: formatDisplayValue)
                 }
                 .font(.caption)
                 .padding(4)
@@ -835,14 +610,11 @@ struct AboutTab: View {
 
             // Links
             HStack(spacing: 16) {
-                Link(destination: URL(string: "https://vocamac.com")!) {
-                    Label("Website", systemImage: "globe")
-                }
-                Link(destination: URL(string: "https://github.com/jatinkrmalik/vocamac")!) {
+                Link(destination: URL(string: "https://github.com/vajahath/vocamac-lite")!) {
                     Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
-                Link(destination: URL(string: "https://github.com/argmaxinc/WhisperKit")!) {
-                    Label("WhisperKit", systemImage: "waveform")
+                Link(destination: URL(string: "https://github.com/jatinkrmalik/vocamac")!) {
+                    Label("Upstream VocaMac", systemImage: "arrow.triangle.branch")
                 }
             }
             .font(.caption)
@@ -863,7 +635,7 @@ struct AboutTab: View {
             Spacer()
 
             HStack(spacing: 0) {
-                Text("Made with ❤️ by ")
+                Text("Fork of VocaMac by ")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                 Link("Jatin Kumar Malik", destination: URL(string: "https://x.com/intent/user?screen_name=jatinkrmalik")!)
@@ -887,6 +659,20 @@ struct AboutTab: View {
 
     private var buildChannelLabel: String {
         appVersionDisplay.contains("nightly") ? "Nightly" : "Beta"
+    }
+
+    private var serverDisplayValue: String {
+        let raw = appState.remoteEndpointURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return "Not configured" }
+        guard let url = URL(string: raw), let host = url.host else { return raw }
+        if let port = url.port {
+            return "\(host):\(port)"
+        }
+        return host
+    }
+
+    private var formatDisplayValue: String {
+        (RemoteEndpointFormat(rawValue: appState.remoteEndpointFormat) ?? .openAI).displayName
     }
 
     private var updateStatusText: String {
@@ -970,7 +756,7 @@ struct DebugTab: View {
                     Image(systemName: "info.circle.fill")
                         .foregroundStyle(.blue)
                         .font(.caption)
-                    Text("**Upgrading?** Permissions now persist across updates since VocaMac is signed with a Developer ID. If permissions ever appear stuck, use the Reset button above.")
+                    Text("**Upgrading?** VocaMac Lite ships unsigned (ad-hoc) builds, so macOS may forget permission grants after an update. If permissions appear stuck, use the Reset button above and re-grant on next launch.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -1060,7 +846,7 @@ struct DebugTab: View {
             // Run tccutil to reset all TCC permissions for this app
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
-            task.arguments = ["reset", "All", "com.vocamac.app"]
+            task.arguments = ["reset", "All", "com.vocamac.lite"]
             try? task.run()
             task.waitUntilExit()
 

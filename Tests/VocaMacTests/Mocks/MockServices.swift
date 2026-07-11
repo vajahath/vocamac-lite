@@ -238,120 +238,18 @@ final class MockCursorOverlay: CursorOverlayManaging {
     }
 }
 
-// MARK: - MockModelManager
+// MARK: - MockTranscriptionService
 
-final class MockModelManager: ModelManaging {
-    var supportedModels: [ModelSize] = ModelSize.allCases
-    var defaultModel: String = "openai_whisper-tiny"
-    var supportedModelNames: [String]?
-    var disabledModelNames: [String] = []
-    var downloadedModels: Set<ModelSize> = []
-    var diskUsage: String = "100 MB"
-    var bundledModels: Set<ModelSize> = []
-    var installedBundledModels: [ModelSize] = []
-    var ensuredTokenizerSizes: [ModelSize] = []
-    var installBundledModelError: Error?
-
-    func deviceRecommendation() -> (defaultModel: String, supported: [String], disabled: [String]) {
-        (
-            defaultModel: defaultModel,
-            supported: supportedModelNames ?? supportedModels.map(whisperKitModelName(for:)),
-            disabled: disabledModelNames
-        )
-    }
-
-    func modelFolder(for size: ModelSize) -> URL? {
-        downloadedModels.contains(size) ? URL(fileURLWithPath: "/mock/path/\(size.rawValue)") : nil
-    }
-
-    func bundledModelFolder(for size: ModelSize) -> URL? {
-        bundledModels.contains(size) ? URL(fileURLWithPath: "/mock/bundled/\(size.rawValue)") : nil
-    }
-
-    func installBundledModelIfAvailable(for size: ModelSize) throws -> Bool {
-        if let installBundledModelError {
-            throw installBundledModelError
-        }
-        guard bundledModels.contains(size) else { return false }
-        installedBundledModels.append(size)
-        downloadedModels.insert(size)
-        return true
-    }
-
-    func ensureTokenizerAssets(for size: ModelSize) throws -> URL {
-        ensuredTokenizerSizes.append(size)
-        return URL(fileURLWithPath: "/mock/path/\(size.rawValue)")
-    }
-
-    func isModelDownloaded(_ size: ModelSize) -> Bool {
-        downloadedModels.contains(size)
-    }
-
-    func isModelSupported(_ size: ModelSize) -> Bool {
-        if let supportedModelNames {
-            return supportedModelNames.contains(whisperKitModelName(for: size))
-                && !disabledModelNames.contains(whisperKitModelName(for: size))
-        }
-        return supportedModels.contains(size)
-    }
-
-    func whisperKitModelName(for size: ModelSize) -> String {
-        switch size {
-        case .tiny:
-            return "openai_whisper-tiny"
-        case .base:
-            return "openai_whisper-base"
-        case .small:
-            return "openai_whisper-small"
-        case .largeV3LatestTurboCompact:
-            return "openai_whisper-large-v3-v20240930_turbo_632MB"
-        case .distilLargeV3Compact:
-            return "distil-whisper_distil-large-v3_594MB"
-        case .distilLargeV3TurboCompact:
-            return "distil-whisper_distil-large-v3_turbo_600MB"
-        case .largeV3LatestCompact:
-            return "openai_whisper-large-v3-v20240930_626MB"
-        case .largeV3Latest:
-            return "openai_whisper-large-v3-v20240930"
-        case .largeV3LatestTurbo:
-            return "openai_whisper-large-v3-v20240930_turbo"
-        case .largeV3:
-            return "openai_whisper-large-v3"
-        case .largeV3Turbo:
-            return "openai_whisper-large-v3_turbo"
-        case .medium:
-            return "openai_whisper-medium"
-        }
-    }
-
-    func modelSize(from whisperKitName: String) -> ModelSize? {
-        ModelSize.allCases.first { whisperKitModelName(for: $0) == whisperKitName }
-    }
-
-    func downloadModel(size: ModelSize, onProgress: @escaping (Double) -> Void) async throws {
-        downloadedModels.insert(size)
-    }
-
-    func diskUsageDescription() -> String {
-        diskUsage
-    }
-}
-
-// MARK: - MockWhisperService
-
-final class MockWhisperService: SpeechTranscribing {
-    typealias LoadRequest = (name: String?, folder: URL?)
-
-    var loadedModelName: String? = "openai_whisper-tiny"
-    var isModelLoaded: Bool = true
+final class MockTranscriptionService: SpeechTranscribing {
     var lastTranscribedAudioData: [Float]?
     var lastLanguage: String?
     var lastTranslate: Bool?
     var lastVocabulary: String?
-    var loadRequests: [LoadRequest] = []
-    var loadResponses: [Result<String?, Error>] = []
-    var mockTranscriptionResult: VocaTranscription = VocaTranscription(text: "mock transcription", duration: 1.0, detectedLanguage: "en", audioLengthSeconds: 1.0, modelUsed: .tiny)
+    var mockTranscriptionResult: VocaTranscription = VocaTranscription(text: "mock transcription", duration: 1.0, detectedLanguage: "en", audioLengthSeconds: 1.0, modelUsed: "remote")
     var shouldThrow = false
+
+    var testConnectionCallCount = 0
+    var testConnectionResult: Result<String, Error> = .success("Connected · 0.1s")
 
     func transcribe(audioData: [Float], language: String?, translate: Bool, vocabulary: String) async throws -> VocaTranscription {
         lastTranscribedAudioData = audioData
@@ -359,31 +257,14 @@ final class MockWhisperService: SpeechTranscribing {
         lastTranslate = translate
         lastVocabulary = vocabulary
         if shouldThrow {
-            throw WhisperError.transcriptionFailed(reason: "mock error")
+            throw RemoteTranscriptionError.httpError(status: 500, body: "mock error")
         }
         return mockTranscriptionResult
     }
 
-    func _loadModel(name: String?, folder: URL?, onPhaseChange: ((String) -> Void)?) async throws {
-        loadRequests.append((name: name, folder: folder))
-        onPhaseChange?("Loading model…")
-
-        if !loadResponses.isEmpty {
-            let response = loadResponses.removeFirst()
-            switch response {
-            case .success(let loadedName):
-                loadedModelName = loadedName ?? name ?? "mock-model"
-                isModelLoaded = true
-                return
-            case .failure(let error):
-                loadedModelName = nil
-                isModelLoaded = false
-                throw error
-            }
-        }
-
-        loadedModelName = name ?? "mock-model"
-        isModelLoaded = true
+    func testConnection() async throws -> String {
+        testConnectionCallCount += 1
+        return try testConnectionResult.get()
     }
 }
 
@@ -428,11 +309,14 @@ final class MockStatsManager: StatsManaging, ObservableObject {
 extension AppState {
     @MainActor
     static func makeTestState(
-        modelManager: MockModelManager = MockModelManager(),
-        whisperService: MockWhisperService = MockWhisperService()
+        transcriptionService: MockTranscriptionService = MockTranscriptionService()
     ) -> (appState: AppState, mocks: TestMocks) {
         UserDefaults.standard.removeObject(forKey: "vocamac.selectedAudioDeviceID")
         UserDefaults.standard.removeObject(forKey: "vocamac.selectedAudioDeviceName")
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.urlKey)
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.formatKey)
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.apiKeyKey)
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.modelNameKey)
 
         let audioEngine = MockAudioEngine()
         let soundManager = MockSoundManager()
@@ -448,17 +332,15 @@ extension AppState {
             hotKeyManager: hotKeyManager,
             permissionManager: permissionManager,
             cursorOverlay: cursorOverlay,
-            modelManager: modelManager,
-            whisperService: whisperService,
+            transcriptionService: transcriptionService,
             textInjector: textInjector,
             statsManager: statsManager
         )
         let appState = AppState(
             audioEngine: audioEngine,
-            whisperService: whisperService,
+            transcriptionService: transcriptionService,
             textInjector: textInjector,
             hotKeyManager: hotKeyManager,
-            modelManager: modelManager,
             soundManager: soundManager,
             cursorOverlay: cursorOverlay,
             statsManager: statsManager,
@@ -475,8 +357,7 @@ struct TestMocks {
     let hotKeyManager: MockHotKeyManager
     let permissionManager: MockPermissionManager
     let cursorOverlay: MockCursorOverlay
-    let modelManager: MockModelManager
-    let whisperService: MockWhisperService
+    let transcriptionService: MockTranscriptionService
     let textInjector: MockTextInjector
     let statsManager: MockStatsManager
 }

@@ -12,8 +12,8 @@ final class LogCategoryTests: XCTestCase {
 
     func testAllCategoriesHaveRawValues() {
         let categories: [LogCategory] = [
-            .appState, .audioEngine, .whisperService, .hotKeyManager,
-            .modelManager, .soundManager, .textInjector, .cursorOverlay,
+            .appState, .audioEngine, .transcription, .hotKeyManager,
+            .soundManager, .textInjector, .cursorOverlay,
             .onboarding, .general
         ]
 
@@ -26,8 +26,8 @@ final class LogCategoryTests: XCTestCase {
     func testCategoryRawValuesAreCapitalized() {
         // Convention: category raw values should start with an uppercase letter
         let categories: [LogCategory] = [
-            .appState, .audioEngine, .whisperService, .hotKeyManager,
-            .modelManager, .soundManager, .textInjector, .cursorOverlay,
+            .appState, .audioEngine, .transcription, .hotKeyManager,
+            .soundManager, .textInjector, .cursorOverlay,
             .onboarding, .general
         ]
 
@@ -40,10 +40,10 @@ final class LogCategoryTests: XCTestCase {
 
     func testCategoryCount() {
         // Ensure we're testing all categories — update this if new ones are added
-        let expectedCount = 10
+        let expectedCount = 9
         let categories: [LogCategory] = [
-            .appState, .audioEngine, .whisperService, .hotKeyManager,
-            .modelManager, .soundManager, .textInjector, .cursorOverlay,
+            .appState, .audioEngine, .transcription, .hotKeyManager,
+            .soundManager, .textInjector, .cursorOverlay,
             .onboarding, .general
         ]
         XCTAssertEqual(categories.count, expectedCount)
@@ -118,7 +118,7 @@ final class VocaLoggerTests: XCTestCase {
     func testLoggingWithDifferentCategories() {
         VocaLogger.info(.appState, "Test appState log")
         VocaLogger.info(.audioEngine, "Test audioEngine log")
-        VocaLogger.info(.whisperService, "Test whisperService log")
+        VocaLogger.info(.transcription, "Test transcription log")
         VocaLogger.info(.hotKeyManager, "Test hotKeyManager log")
         VocaLogger.info(.general, "Test general log")
     }

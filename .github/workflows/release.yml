@@ -2,236 +2,104 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 0.1.0). Manual runs only upload an artifact; no release is published.'
+        required: true
 
 permissions:
   contents: write
 
 jobs:
   build-and-release:
-    name: Build & Release
+    name: Build DMG & Release
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Extract version from tag
+      - name: Determine version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v5
+        with:
+          path: .build
+          key: spm-${{ runner.os }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-
 
       - name: Initialize Xcode tools
         run: sudo xcodebuild -runFirstLaunch
 
-      # ── Code Signing Setup ──────────────────────────────────────────────────
-      - name: Import Developer ID certificate
-        env:
-          DEVELOPER_ID_CERT_P12:          ${{ secrets.DEVELOPER_ID_CERT_P12 }}
-          DEVELOPER_ID_CERT_PASSWORD:     ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
-        run: |
-          # Create a temporary keychain so the cert is isolated to this job
-          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
-          KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Decode and import the p12
-          echo "$DEVELOPER_ID_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" \
-            -k "$KEYCHAIN_PATH" \
-            -P "$DEVELOPER_ID_CERT_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/security
-
-          # Allow codesign to access the key without a passphrase prompt
-          security set-key-partition-list \
-            -S apple-tool:,apple:,codesign: \
-            -s -k "$KEYCHAIN_PASSWORD" \
-            "$KEYCHAIN_PATH"
-
-          # Add to keychain search list
-          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | xargs)
-
-          # Store the keychain path for later steps
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
-          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
-
-          # Verify the identity
-          IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" \
-            | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)"/\1/')
-          if [ -z "$IDENTITY" ]; then
-            echo "❌ Developer ID certificate not found after import"
-            exit 1
-          fi
-          echo "✅ Imported: $IDENTITY"
-          echo "CODE_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
-
-      - name: Store notarization credentials
-        env:
-          NOTARIZE_APPLE_ID:   ${{ secrets.NOTARIZE_APPLE_ID }}
-          NOTARIZE_TEAM_ID:    ${{ secrets.NOTARIZE_TEAM_ID }}
-          NOTARIZE_PASSWORD:   ${{ secrets.NOTARIZE_PASSWORD }}
-        run: |
-          xcrun notarytool store-credentials "AC_PASSWORD" \
-            --apple-id  "$NOTARIZE_APPLE_ID" \
-            --team-id   "$NOTARIZE_TEAM_ID" \
-            --password  "$NOTARIZE_PASSWORD"
-
-      # ── Bundled Tiny Model ─────────────────────────────────────────────────
-      - name: Set up Python for huggingface-cli
-        run: |
-          python3 -m venv "$RUNNER_TEMP/hf-venv"
-          source "$RUNNER_TEMP/hf-venv/bin/activate"
-          pip install -U huggingface_hub
-          echo "$RUNNER_TEMP/hf-venv/bin" >> "$GITHUB_PATH"
-
-      - name: Fetch bundled tiny model from Hugging Face
-        run: |
-          MODEL_STAGE="$RUNNER_TEMP/whisperkit-coreml"
-          hf download argmaxinc/whisperkit-coreml \
-            --include "openai_whisper-tiny/*" \
-            --local-dir "$MODEL_STAGE"
-          hf download openai/whisper-tiny \
-            tokenizer.json tokenizer_config.json \
-            --local-dir "$MODEL_STAGE/openai_whisper-tiny"
-          rm -rf "$MODEL_STAGE/.cache" "$MODEL_STAGE/openai_whisper-tiny/.cache"
-          test -d "$MODEL_STAGE/openai_whisper-tiny"
-          test -f "$MODEL_STAGE/openai_whisper-tiny/tokenizer.json"
-          test -f "$MODEL_STAGE/openai_whisper-tiny/tokenizer_config.json"
-          test -d "$MODEL_STAGE/openai_whisper-tiny/MelSpectrogram.mlmodelc"
-          test -d "$MODEL_STAGE/openai_whisper-tiny/AudioEncoder.mlmodelc"
-          test -d "$MODEL_STAGE/openai_whisper-tiny/TextDecoder.mlmodelc"
-          echo "VOCAMAC_BUNDLED_MODEL_SOURCE=$MODEL_STAGE" >> "$GITHUB_ENV"
-
-      # ── Build & Package ──────────────────────────────────────────────────────
-      - name: Run tests
+      - name: Test
         run: swift test
 
-      - name: Build and create signed, notarized DMG
-        run: ./scripts/dist.sh
+      - name: Build unsigned DMG
         env:
-          VOCAMAC_BUNDLED_MODEL_SOURCE: ${{ env.VOCAMAC_BUNDLED_MODEL_SOURCE }}
           APP_VERSION: ${{ steps.version.outputs.VERSION }}
+        run: ./scripts/dist.sh --skip-sign
 
-      - name: Verify code signature
-        run: codesign -v --deep --strict VocaMac.app
-
-      - name: Verify SPM resource bundles are correctly staged
+      - name: Verify app bundle
         run: |
-          echo "🔍 Checking SPM resource bundle layout..."
-          FAIL=0
-
-          # xcodebuild's Bundle.module accessor checks Bundle.main.resourceURL
-          # which resolves to Contents/Resources/ for .app bundles.
-          # Bundles must NOT be at the .app root (codesign rejects that).
-          if ls VocaMac.app/*.bundle 1>/dev/null 2>&1; then
-            echo "❌ Found .bundle at app root — will break codesign!"
-            ls VocaMac.app/*.bundle
-            FAIL=1
-          fi
-
-          FOUND_ANY=false
-          for bundle in VocaMac.app/Contents/Resources/*.bundle; do
-            [ -d "$bundle" ] || continue
-            FOUND_ANY=true
-            name="$(basename "$bundle")"
-            echo "✅ $name — present in Contents/Resources/"
-          done
-
-          if [ "$FOUND_ANY" = false ]; then
-            echo "❌ No .bundle directories found in Contents/Resources/!"
-            FAIL=1
-          fi
-
-          # Verify the critical WhisperKit tokenizer fallback resources.
-          # xcodebuild bundles have the structure: <bundle>/Contents/Resources/<file>
-          HUB="VocaMac.app/Contents/Resources/swift-transformers_Hub.bundle"
-          if [ ! -d "$HUB" ]; then
-            echo "❌ swift-transformers_Hub.bundle missing!"
-            FAIL=1
-          else
-            for f in gpt2_tokenizer_config.json t5_tokenizer_config.json; do
-              # Search recursively — xcodebuild places resources in Contents/Resources/
-              if find "$HUB" -name "$f" -print -quit | grep -q .; then
-                echo "✅ $f present in swift-transformers_Hub.bundle"
-              else
-                echo "❌ Missing $f in swift-transformers_Hub.bundle"
-                FAIL=1
-              fi
-            done
-          fi
-
-          # Verify the binary uses the xcodebuild accessor (contains resourceURL)
-          if strings VocaMac.app/Contents/MacOS/VocaMac | grep -q 'resourceURL'; then
-            echo "✅ Binary uses xcodebuild Bundle.module accessor"
-          else
-            echo "❌ Binary does NOT contain resourceURL — wrong accessor!"
-            echo "   Ensure build.sh uses xcodebuild, not swift build."
-            FAIL=1
-          fi
-
-          if [ "$FAIL" -ne 0 ]; then
-            echo ""
-            echo "Bundle layout validation failed. See above for details."
+          # No SPM resource bundle may sit at the .app root (codesign forbids it).
+          if find VocaMac.app -maxdepth 1 -name "*.bundle" | grep -q .; then
+            echo "❌ Found .bundle at app root"
             exit 1
           fi
-          echo "✅ All SPM resource bundles are correctly staged."
-
-      - name: Rename artifacts with version
-        run: |
-          ARCH=$(uname -m)
-          # dist.sh already names the DMG correctly; verify it exists
-          ls -lh dist/VocaMac-*.dmg
-
-          # Create ZIP from the signed .app
-          ditto -c -k --sequesterRsrc --keepParent VocaMac.app \
-            "dist/VocaMac-${{ steps.version.outputs.VERSION }}-${ARCH}.zip"
-
-          echo "ZIP created:"
-          ls -lh dist/VocaMac-*.zip
+          # The app's own resource bundle must be staged in Contents/Resources.
+          test -d "VocaMac.app/Contents/Resources/VocaMac_VocaMac.bundle" || {
+            echo "❌ VocaMac_VocaMac.bundle missing from Contents/Resources"
+            exit 1
+          }
+          codesign -dv VocaMac.app
+          echo "App bundle verified"
 
       - name: Generate checksums
         run: |
           cd dist
-          shasum -a 256 VocaMac-*.dmg VocaMac-*.zip > checksums.txt
+          shasum -a 256 VocaMac-*.dmg > checksums.txt
           cat checksums.txt
 
-      # ── Cleanup ─────────────────────────────────────────────────────────────
-      - name: Delete temporary keychain
-        if: always()
-        run: |
-          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VocaMac-${{ steps.version.outputs.VERSION }}-dmg
+          path: |
+            dist/VocaMac-*.dmg
+            dist/checksums.txt
 
-      # ── Release ─────────────────────────────────────────────────────────────
       - name: Create GitHub Release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-          draft: true
           files: |
             dist/VocaMac-*.dmg
-            dist/VocaMac-*.zip
             dist/checksums.txt
           body: |
-            ## VocaMac ${{ steps.version.outputs.VERSION }}
+            ## Install
 
-            ### Installation
+            **Homebrew (recommended):**
+            ```
+            brew tap vajahath/vocamac-lite
+            brew install --cask vocamac-lite --no-quarantine
+            ```
 
-            1. Download `VocaMac-${{ steps.version.outputs.VERSION }}-arm64.dmg`
-            2. Open the DMG and drag VocaMac to Applications
-            3. Open VocaMac from Applications
-            4. Grant **Microphone**, **Accessibility**, and **Input Monitoring** permissions when prompted
-
-            > This release is **Developer ID signed and notarized** by Apple.
-            > macOS will open it without any security warnings.
-
-            ### Requirements
-            - macOS 13 (Ventura) or later
-            - Apple Silicon (arm64)
-
-            ### Checksums (SHA-256)
-            See `checksums.txt` for verification.
+            **Manual:** download the DMG below, drag VocaMac to Applications, then
+            remove the quarantine flag (this build is not signed with an Apple
+            Developer ID):
+            ```
+            xattr -dr com.apple.quarantine /Applications/VocaMac.app
+            ```
+            Or right-click the app → Open → Open.

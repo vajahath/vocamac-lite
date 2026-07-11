@@ -1,7 +1,7 @@
 // SystemInfo.swift
 // VocaMac
 //
-// Detects system hardware capabilities and recommends optimal whisper model size.
+// Detects system hardware capabilities for display in settings.
 
 import Foundation
 
@@ -14,7 +14,6 @@ struct SystemCapabilities {
     let processorName: String
     let coreCount: Int
     let supportsMetalAcceleration: Bool
-    let recommendedModel: ModelSize
 
     /// Human-readable summary for display in settings
     var summaryDescription: String {
@@ -24,7 +23,6 @@ struct SystemCapabilities {
         Memory: \(physicalMemoryGB) GB
         Cores: \(coreCount)
         Metal: \(supportsMetalAcceleration ? "Supported" : "Not Available")
-        Recommended Model: \(recommendedModel.displayName)
         """
     }
 }
@@ -42,18 +40,12 @@ enum SystemInfo {
         let cores = coreCount
         let metal = appleSilicon // Metal acceleration is available on Apple Silicon
 
-        let recommended = recommendModel(
-            isAppleSilicon: appleSilicon,
-            memoryGB: memoryGB
-        )
-
         return SystemCapabilities(
             isAppleSilicon: appleSilicon,
             physicalMemoryGB: memoryGB,
             processorName: processor,
             coreCount: cores,
-            supportsMetalAcceleration: metal,
-            recommendedModel: recommended
+            supportsMetalAcceleration: metal
         )
     }
 
@@ -109,42 +101,5 @@ enum SystemInfo {
         sysctlbyname("hw.model", &model, &size, nil, 0)
 
         return String(cString: model)
-    }
-
-    // MARK: - Model Recommendation
-
-    /// Recommend a default model family based on system capabilities.
-    ///
-    /// WhisperKit's runtime recommendation remains the source of truth for
-    /// actual model loading. This fallback is used for static system summaries.
-    static func recommendModel(isAppleSilicon: Bool, memoryGB: Int) -> ModelSize {
-        if isAppleSilicon {
-            switch memoryGB {
-            case ...7:   return .tiny
-            case 8...15: return .base
-            case 16...23: return .small
-            case 24...31: return .largeV3LatestTurboCompact
-            case 32...:  return .largeV3Latest
-            default:     return .tiny
-            }
-        } else {
-            // Intel Macs: no Metal acceleration, less memory-efficient
-            switch memoryGB {
-            case ...7:   return .tiny
-            case 8...15: return .tiny
-            case 16...23: return .base
-            case 24...31: return .small
-            case 32...:  return .small
-            default:     return .tiny
-            }
-        }
-    }
-
-    /// Number of threads to use for whisper.cpp inference
-    /// Uses a reasonable fraction of available cores to avoid monopolizing the CPU
-    static var recommendedThreadCount: Int {
-        let cores = coreCount
-        // Use at most half the cores, minimum 2, maximum 8
-        return max(2, min(cores / 2, 8))
     }
 }

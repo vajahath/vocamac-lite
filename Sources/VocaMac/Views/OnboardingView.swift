@@ -2,7 +2,7 @@
 // VocaMac
 //
 // Multi-step onboarding wizard for first-time users.
-// Guides users through welcome, permissions, model selection, hotkey setup, and testing.
+// Guides users through welcome, permissions, endpoint setup, hotkey setup, and testing.
 
 import SwiftUI
 
@@ -12,9 +12,10 @@ import SwiftUI
 enum OnboardingStep: Int, CaseIterable, Identifiable {
     case welcome = 0
     case permissions = 1
-    case hotkeyConfig = 2
-    case quickTest = 3
-    case complete = 4
+    case endpointSetup = 2
+    case hotkeyConfig = 3
+    case quickTest = 4
+    case complete = 5
 
     var id: Int { rawValue }
 
@@ -22,6 +23,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         switch self {
         case .welcome: return "Welcome to VocaMac"
         case .permissions: return "Grant Permissions"
+        case .endpointSetup: return "Connect Your Server"
         case .hotkeyConfig: return "Configure Hotkey"
         case .quickTest: return "Quick Test"
         case .complete: return "All Set!"
@@ -72,6 +74,8 @@ struct OnboardingView: View {
                             WelcomeStep()
                         case .permissions:
                             PermissionsStep()
+                        case .endpointSetup:
+                            EndpointSetupStep()
                         case .hotkeyConfig:
                             HotkeyConfigStep()
                         case .quickTest:
@@ -210,7 +214,7 @@ struct WelcomeStep: View {
                 Text("VocaMac")
                     .font(.system(size: 40, weight: .bold))
 
-                Text("Your voice, your Mac, your privacy")
+                Text("Your voice, your server, your rules")
                     .font(.title3)
                     .foregroundStyle(.secondary)
             }
@@ -218,8 +222,8 @@ struct WelcomeStep: View {
             // Description
             VStack(alignment: .leading, spacing: 12) {
                 Label("Dictate directly into any app", systemImage: "doc.text")
-                Label("All processing happens on your Mac", systemImage: "lock.fill")
-                Label("No internet required, no data leaves your device", systemImage: "network.slash")
+                Label("Transcription runs on a server you control — keep it on your LAN for privacy", systemImage: "server.rack")
+                Label("Tiny footprint on this Mac: no local AI model in RAM", systemImage: "leaf.fill")
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
@@ -384,211 +388,120 @@ struct OnboardingPermissionRow: View {
     }
 }
 
-// MARK: - Step 3: Model Selection
+// MARK: - Step 3: Endpoint Setup
 
-struct ModelSelectionStep: View {
+struct EndpointSetupStep: View {
     @EnvironmentObject var appState: AppState
+    @State private var showAdvanced = false
+
+    private var isConfigured: Bool {
+        !appState.remoteEndpointURL.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Choose a model based on your device and needs.")
+            Text("VocaMac Lite sends your recorded audio to a Whisper server you run — nothing is transcribed on this Mac.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
 
-            if let recommended = appState.deviceRecommendedModel,
-               let recommendedSize = appState.modelManager.modelSize(from: recommended) {
-                HStack(spacing: 12) {
-                    Image(systemName: "lightbulb.fill")
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Server URL")
                         .font(.caption)
-                        .foregroundStyle(.orange)
-                    Text("We recommend: **\(recommendedSize.displayName)**")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+
+                    TextField("Server URL", text: $appState.remoteEndpointURL, prompt: Text("http://192.168.1.10:8000"))
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("API Format")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+
+                    Picker("API format", selection: $appState.remoteEndpointFormat) {
+                        ForEach(RemoteEndpointFormat.allCases) { format in
+                            Text(format.displayName).tag(format.rawValue)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+                    .labelsHidden()
+
+                    Text((RemoteEndpointFormat(rawValue: appState.remoteEndpointFormat) ?? .openAI).detailDescription)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Spacer()
                 }
-                .padding(.horizontal)
+
+                DisclosureGroup("Advanced (optional)", isExpanded: $showAdvanced) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        SecureField("API key (Bearer token)", text: $appState.remoteAPIKey)
+                            .textFieldStyle(.roundedBorder)
+
+                        TextField("Model name", text: $appState.remoteModelName, prompt: Text("Systran/faster-whisper-small"))
+                            .textFieldStyle(.roundedBorder)
+                            .autocorrectionDisabled()
+
+                        Text("Leave empty to use the server's default model. Both can be changed later in Settings → Endpoint.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 6)
+                }
+                .font(.caption)
+
+                HStack {
+                    Button("Test Connection") {
+                        Task { @MainActor in
+                            await appState.checkEndpointReachability()
+                        }
+                    }
+                    .disabled(!isConfigured || appState.endpointStatus == .checking)
+
+                    Spacer()
+
+                    EndpointStatusView(status: appState.endpointStatus)
+                }
+            }
+            .padding()
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(8)
+
+            if !isConfigured {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.yellow)
+                    Text("No server configured yet. You can continue and set it later in Settings → Endpoint, but dictation won't work until then.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.yellow.opacity(0.05))
+                .cornerRadius(8)
             }
 
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(appState.availableModels) { modelInfo in
-                        ModelSelectionCard(
-                            modelInfo: modelInfo,
-                            isRecommended: {
-                                guard let recommended = appState.deviceRecommendedModel else { return false }
-                                return appState.modelManager.modelSize(from: recommended) == modelInfo.size
-                            }(),
-                            onSelect: {
-                                Task { @MainActor in
-                                    await appState.loadModel(modelInfo.size)
-                                }
-                            },
-                            onDownload: {
-                                Task { @MainActor in
-                                    await appState.downloadModel(modelInfo.size)
-                                }
-                            }
-                        )
-                    }
-                }
-                .padding()
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+                Text("Works with Speaches, faster-whisper-server, LocalAI, whisper.cpp's whisper-server, or any OpenAI-compatible transcription API. See the README for copy-paste server setups.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.blue.opacity(0.05))
+            .cornerRadius(8)
 
             Spacer()
         }
         .padding()
-    }
-}
-
-// MARK: - Model Selection Card
-
-struct ModelSelectionCard: View {
-    let modelInfo: WhisperModelInfo
-    let isRecommended: Bool
-    let onSelect: () -> Void
-    let onDownload: () -> Void
-    @State private var showForceDownloadAlert = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(modelInfo.size.displayName)
-                            .font(.body)
-                            .fontWeight(.semibold)
-                        if isRecommended {
-                            Label("Recommended", systemImage: "star.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.orange)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.orange.opacity(0.1))
-                                .cornerRadius(4)
-                        }
-                        Spacer()
-                    }
-
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Size")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(modelInfo.size.fileSizeDescription)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Speed")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text("\(modelInfo.size.relativeSpeed)x")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Quality")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(modelInfo.size.qualityDescription)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                        }
-
-                        Spacer()
-                    }
-                }
-
-                Spacer()
-            }
-
-            HStack(spacing: 12) {
-                if let progress = modelInfo.downloadProgress {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ProgressView(value: progress)
-                        Text("\(Int(progress * 100))%")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                } else if modelInfo.isLoading {
-                    HStack(spacing: 8) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(modelInfo.loadingStatus)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } else if modelInfo.isDownloaded {
-                    if modelInfo.isActive {
-                        Label("Active", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                    } else {
-                        Button(action: onSelect) {
-                            Text("Use This Model")
-                                .font(.caption)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.blue)
-                                .foregroundStyle(.white)
-                                .cornerRadius(6)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } else if !modelInfo.isSupported {
-                    Button {
-                        showForceDownloadAlert = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "sparkles")
-                            Text("Try Anyway")
-                        }
-                        .font(.caption)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.gray.opacity(0.2))
-                        .foregroundStyle(.secondary)
-                        .cornerRadius(6)
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    Button(action: onDownload) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.down.circle")
-                            Text("Download")
-                        }
-                        .font(.caption)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.gray.opacity(0.2))
-                        .foregroundStyle(.primary)
-                        .cornerRadius(6)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                Spacer()
-            }
-        }
-        .padding()
-        .background(Color.gray.opacity(0.05))
-        .cornerRadius(8)
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isRecommended ? Color.orange : Color.clear, lineWidth: 1.5)
-        )
-        .alert("Use Experimental Model?", isPresented: $showForceDownloadAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Download Anyway", role: .destructive) {
-                onDownload()
-            }
-        } message: {
-            Text("WhisperKit hasn't verified this model on your chip family. It will likely work but may be slower than tuned models.")
-        }
     }
 }
 
@@ -839,6 +752,7 @@ struct CompleteStep: View {
                     SummaryItem(icon: "keyboard.fill", text: "Input monitoring enabled")
                 }
                 SummaryItem(icon: "keyboard", text: "Hotkey: \(KeyCodeReference.displayName(for: appState.hotKeyCode))")
+                SummaryItem(icon: "server.rack", text: endpointSummary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
@@ -880,6 +794,13 @@ struct CompleteStep: View {
         }
         .padding()
     }
+
+    private var endpointSummary: String {
+        let url = appState.remoteEndpointURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !url.isEmpty else { return "Server: not configured (Settings → Endpoint)" }
+        let format = (RemoteEndpointFormat(rawValue: appState.remoteEndpointFormat) ?? .openAI).displayName
+        return "Server: \(url) (\(format))"
+    }
 }
 
 struct SummaryItem: View {
@@ -911,10 +832,3 @@ extension View {
         }
     }
 }
-
-#if DEBUG
-#Preview {
-    OnboardingView()
-        .environmentObject(AppState.production())
-}
-#endif

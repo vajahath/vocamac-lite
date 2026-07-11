@@ -3,7 +3,7 @@
 #
 # This gives you a clean slate:
 #   - Kills any running VocaMac process
-#   - Removes downloaded models (~/.../Application Support/VocaMac/)
+#   - Removes app data (~/.../Application Support/VocaMac/)
 #   - Removes launcher scripts (~/.local/bin/vocamac*)
 #   - Removes CoreML compilation cache
 #   - Removes the .app bundle if it exists
@@ -38,25 +38,17 @@ echo "→ Stopping VocaMac..."
 pkill -f "VocaMac" 2>/dev/null && echo "  ✓ Process killed" || echo "  · Not running"
 sleep 0.5
 
-# 2. Remove Application Support data (models, caches)
+# 2. Remove Application Support data (logs, caches)
 APP_SUPPORT="$HOME/Library/Application Support/VocaMac"
 if [ -d "$APP_SUPPORT" ]; then
     # Show what we're deleting
-    MODEL_SIZE=$(du -sh "$APP_SUPPORT" 2>/dev/null | cut -f1)
-    echo "→ Removing app data ($MODEL_SIZE)..."
+    DATA_SIZE=$(du -sh "$APP_SUPPORT" 2>/dev/null | cut -f1)
+    echo "→ Removing app data ($DATA_SIZE)..."
     echo "  $APP_SUPPORT"
     rm -rf "$APP_SUPPORT"
     echo "  ✓ App data removed"
 else
     echo "→ No app data found"
-fi
-
-# 3. Remove CoreML compilation cache (compiled model artifacts)
-COREML_CACHE="$HOME/Library/Caches/com.apple.CoreML"
-if [ -d "$COREML_CACHE" ]; then
-    echo "→ Clearing CoreML cache..."
-    rm -rf "$COREML_CACHE"
-    echo "  ✓ CoreML cache cleared"
 fi
 
 # 4. Remove launcher scripts
@@ -94,7 +86,7 @@ done
 # 6. Remove UserDefaults/preferences
 echo "→ Removing preferences..."
 defaults delete com.vocamac.VocaMac 2>/dev/null && echo "  ✓ Preferences cleared" || echo "  · No preferences found"
-defaults delete com.vocamac.app 2>/dev/null && echo "  ✓ App preferences cleared" || true
+defaults delete com.vocamac.lite 2>/dev/null && echo "  ✓ App preferences cleared" || true
 
 # 7. Clean build artifacts
 if [ "$KEEP_BUILD" = false ]; then

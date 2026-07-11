@@ -2,7 +2,6 @@
 // VocaMac
 //
 // Represents the output of a VocaMac transcription.
-// Named VocaTranscription to avoid collision with WhisperKit's TranscriptionResult.
 
 import Foundation
 
@@ -25,15 +24,15 @@ struct VocaTranscription: Identifiable {
     /// Length of the source audio in seconds
     let audioLengthSeconds: Double
 
-    /// Which model was used for this transcription
-    let modelUsed: ModelSize
+    /// Which model was used for this transcription (endpoint model name, or "remote" when unset)
+    let modelUsed: String
 
     init(
         text: String,
         duration: TimeInterval,
         detectedLanguage: String,
         audioLengthSeconds: Double,
-        modelUsed: ModelSize,
+        modelUsed: String,
         timestamp: Date = Date()
     ) {
         self.id = UUID()

@@ -35,31 +35,32 @@ final class UpdateCheckerTests: XCTestCase {
     }
 
     func testDetectHomebrewInstallFromCaskroomSymlink() throws {
-        let fixture = try makeHomebrewFixture(caskToken: "vocamac", version: "0.6.2")
+        let fixture = try makeHomebrewFixture(caskToken: "vocamac-lite", version: "0.1.0")
 
         let install = UpdateChecker.detectHomebrewInstall(
             bundlePath: fixture.appBundle.path,
             caskroomRoots: [fixture.caskroomRoot]
         )
 
-        XCTAssertEqual(install?.caskToken, "vocamac")
-        XCTAssertEqual(install?.upgradeCommand, "brew upgrade --cask vocamac")
+        XCTAssertEqual(install?.caskToken, "vocamac-lite")
+        XCTAssertEqual(install?.upgradeCommand, "brew upgrade --cask vocamac-lite")
     }
 
-    func testDetectHomebrewInstallPreservesNightlyCaskToken() throws {
-        let fixture = try makeHomebrewFixture(caskToken: "vocamac-nightly", version: "nightly")
+    func testDetectHomebrewInstallIgnoresUpstreamCask() throws {
+        // The upstream "vocamac" cask is not ours — installs from it should
+        // not be detected as a Homebrew install of VocaMac Lite.
+        let fixture = try makeHomebrewFixture(caskToken: "vocamac", version: "0.7.0")
 
         let install = UpdateChecker.detectHomebrewInstall(
             bundlePath: fixture.appBundle.path,
             caskroomRoots: [fixture.caskroomRoot]
         )
 
-        XCTAssertEqual(install?.caskToken, "vocamac-nightly")
-        XCTAssertEqual(install?.upgradeCommand, "brew upgrade --cask vocamac-nightly")
+        XCTAssertNil(install)
     }
 
     func testDetectHomebrewInstallRequiresReceipt() throws {
-        let fixture = try makeHomebrewFixture(caskToken: "vocamac", version: "0.6.2", writeReceipt: false)
+        let fixture = try makeHomebrewFixture(caskToken: "vocamac-lite", version: "0.1.0", writeReceipt: false)
 
         let install = UpdateChecker.detectHomebrewInstall(
             bundlePath: fixture.appBundle.path,
@@ -72,7 +73,7 @@ final class UpdateCheckerTests: XCTestCase {
     @MainActor
     func testCheckForUpdatesTransitionsToHomebrewStateWhenInstalledViaHomebrew() async {
         let checker = UpdateChecker()
-        checker.overrideHomebrewInstall = .installed(HomebrewInstall(caskToken: "vocamac-nightly"))
+        checker.overrideHomebrewInstall = .installed(HomebrewInstall(caskToken: "vocamac-lite"))
 
         let mockRelease = GitHubRelease(
             tagName: "v99.99.99",
@@ -97,7 +98,7 @@ final class UpdateCheckerTests: XCTestCase {
 
         if case .updateAvailableViaHomebrew(let info, let install) = checker.updateState {
             XCTAssertEqual(info.tagName, "v99.99.99")
-            XCTAssertEqual(install.caskToken, "vocamac-nightly")
+            XCTAssertEqual(install.caskToken, "vocamac-lite")
         } else {
             XCTFail("Expected .updateAvailableViaHomebrew but got \(String(describing: checker.updateState))")
         }

@@ -187,37 +187,17 @@ struct VocaMacApp: App {
         }
     }
 
-    /// Terminate any other running instances of VocaMac
+    /// Terminate any other running instances of VocaMac Lite.
+    /// Matches only our own bundle id — the upstream VocaMac app
+    /// (com.vocamac.app) is a different product and must not be killed.
     private static func ensureSingleInstance() {
         let currentPID = ProcessInfo.processInfo.processIdentifier
-        let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: "com.vocamac.app")
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.vocamac.lite"
+        let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
 
         for app in runningApps where app.processIdentifier != currentPID {
             VocaLogger.info(.general, "Terminating previous instance (PID \(app.processIdentifier))")
             app.terminate()
-        }
-
-        // Also kill by process name for direct binary execution (no bundle ID)
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        task.arguments = ["-f", "VocaMac"]
-
-        let pipe = Pipe()
-        task.standardOutput = pipe
-
-        do {
-            try task.run()
-            task.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                let pids = output.split(separator: "\n").compactMap { Int32($0) }
-                for pid in pids where pid != currentPID {
-                    VocaLogger.info(.general, "Killing previous VocaMac process (PID \(pid))")
-                    kill(pid, SIGTERM)
-                }
-            }
-        } catch {
-            // pgrep not found or failed — not critical
         }
     }
 }

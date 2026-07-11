@@ -37,12 +37,13 @@ final class OnboardingStepTests: XCTestCase {
 
     func testOnboardingStepOrdering() {
         let steps = OnboardingStep.allCases
-        XCTAssertEqual(steps.count, 5)
+        XCTAssertEqual(steps.count, 6)
         XCTAssertEqual(steps[0], .welcome)
         XCTAssertEqual(steps[1], .permissions)
-        XCTAssertEqual(steps[2], .hotkeyConfig)
-        XCTAssertEqual(steps[3], .quickTest)
-        XCTAssertEqual(steps[4], .complete)
+        XCTAssertEqual(steps[2], .endpointSetup)
+        XCTAssertEqual(steps[3], .hotkeyConfig)
+        XCTAssertEqual(steps[4], .quickTest)
+        XCTAssertEqual(steps[5], .complete)
     }
 
     func testOnboardingStepTitles() {
@@ -242,132 +243,77 @@ final class AppStateOnboardingTests: XCTestCase {
         XCTAssertTrue(appState.hasCompletedOnboarding)
     }
 
-    @MainActor
-    func testPerformStartupInstallsBundledTinyModelBeforeDownload() async {
-        let (appState, mocks) = AppState.makeTestState()
-        mocks.modelManager.bundledModels = [.tiny]
-        appState.selectedModelSize = ModelSize.tiny.rawValue
-
-        await appState.performStartup()
-
-        // Bundled model should have been installed
-        XCTAssertEqual(mocks.modelManager.installedBundledModels, [.tiny])
-        // WhisperKit handles tokenizer fetching internally — we no longer
-        // pre-validate tokenizer assets before loading. Asserting that
-        // ensuredTokenizerSizes is empty confirms we removed the incorrect check.
-        XCTAssertEqual(mocks.modelManager.ensuredTokenizerSizes, [])
-        XCTAssertEqual(mocks.whisperService.loadedModelName, "openai_whisper-tiny")
-    }
 }
 
-// MARK: - AppState Model Loading Tests
+// MARK: - AppState Endpoint Tests
 
-final class AppStateModelLoadingTests: XCTestCase {
-
-    override func setUp() {
-        super.setUp()
-        UserDefaults.standard.removeObject(forKey: "vocamac.selectedModelSize")
-    }
-
-    override func tearDown() {
-        UserDefaults.standard.removeObject(forKey: "vocamac.selectedModelSize")
-        super.tearDown()
-    }
+final class AppStateEndpointTests: XCTestCase {
 
     @MainActor
-    func testSetupKeepsLargeSupportedWhenMediumIsNotRecommended() {
-        let modelManager = MockModelManager()
-        modelManager.defaultModel = "openai_whisper-large-v3-v20240930"
-        modelManager.supportedModelNames = [
-            "openai_whisper-tiny",
-            "openai_whisper-base",
-            "openai_whisper-small",
-            "openai_whisper-large-v3-v20240930",
-            "openai_whisper-large-v3-v20240930_626MB",
-        ]
-
-        let (appState, _) = AppState.makeTestState(modelManager: modelManager)
-
-        XCTAssertEqual(appState.deviceRecommendedModel, "openai_whisper-large-v3-v20240930")
-        XCTAssertNil(appState.availableModels.first(where: { $0.size == .medium }))
-        XCTAssertEqual(
-            appState.availableModels.first(where: { $0.size == .largeV3Latest })?.isSupported,
-            true
-        )
-    }
-
-    @MainActor
-    func testFailedModelSwitchShowsErrorAndRestoresPreviousModel() async {
-        UserDefaults.standard.set(ModelSize.small.rawValue, forKey: "vocamac.selectedModelSize")
-
-        let modelManager = MockModelManager()
-        modelManager.downloadedModels = [.small, .medium]
-
-        let whisperService = MockWhisperService()
-        whisperService.loadedModelName = "openai_whisper-small"
-        whisperService.isModelLoaded = true
-        let loadError = NSError(
-            domain: "VocaMacTests",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "CoreML rejected model"]
-        )
-        whisperService.loadResponses = [
-            .failure(loadError),
-            .success("openai_whisper-small"),
-        ]
-
-        let (appState, mocks) = AppState.makeTestState(
-            modelManager: modelManager,
-            whisperService: whisperService
-        )
-
-        await appState.loadModel(.medium)
-
-        XCTAssertEqual(
-            mocks.whisperService.loadRequests.map { $0.name },
-            ["openai_whisper-medium", "openai_whisper-small"]
-        )
-        XCTAssertEqual(appState.appStatus, .error)
-        XCTAssertTrue(appState.errorMessage?.contains("Failed to load Medium") == true)
-        XCTAssertEqual(appState.currentModel?.size, .small)
-        XCTAssertEqual(appState.selectedModelSize, ModelSize.small.rawValue)
-        XCTAssertEqual(
-            appState.availableModels.first(where: { $0.size == .small })?.isActive,
-            true
-        )
-        XCTAssertEqual(
-            appState.availableModels.first(where: { $0.size == .medium })?.isLoading,
-            false
-        )
-    }
-
-    @MainActor
-    func testStartupFallsBackFromUnsupportedMediumPreference() async {
-        UserDefaults.standard.set(ModelSize.medium.rawValue, forKey: "vocamac.selectedModelSize")
-
-        let modelManager = MockModelManager()
-        modelManager.defaultModel = "openai_whisper-large-v3-v20240930"
-        modelManager.supportedModelNames = [
-            "openai_whisper-tiny",
-            "openai_whisper-base",
-            "openai_whisper-small",
-            "openai_whisper-large-v3-v20240930",
-        ]
-        modelManager.downloadedModels = [.small, .medium]
-
-        let whisperService = MockWhisperService()
-        whisperService.loadedModelName = nil
-        whisperService.isModelLoaded = false
-
-        let (appState, mocks) = AppState.makeTestState(
-            modelManager: modelManager,
-            whisperService: whisperService
-        )
+    func testStartupLeavesEndpointUnconfiguredWithEmptyURL() async {
+        let (appState, mocks) = AppState.makeTestState()
 
         await appState.performStartup()
+        // Give the fire-and-forget reachability task a beat to run.
+        await Task.yield()
 
-        XCTAssertEqual(mocks.whisperService.loadRequests.first?.name, "openai_whisper-small")
-        XCTAssertEqual(appState.selectedModelSize, ModelSize.small.rawValue)
-        XCTAssertEqual(appState.currentModel?.size, .small)
+        XCTAssertEqual(appState.endpointStatus, .unconfigured)
+        XCTAssertEqual(mocks.transcriptionService.testConnectionCallCount, 0)
+        // Hotkey listener should still start regardless of endpoint state.
+        XCTAssertEqual(mocks.hotKeyManager.startListeningCallCount, 1)
+    }
+
+    @MainActor
+    func testCheckEndpointReachabilitySuccess() async {
+        let (appState, mocks) = AppState.makeTestState()
+        appState.remoteEndpointURL = "http://192.168.1.10:8000"
+        mocks.transcriptionService.testConnectionResult = .success("Connected · 0.2s")
+
+        await appState.checkEndpointReachability()
+
+        XCTAssertEqual(appState.endpointStatus, .reachable("Connected · 0.2s"))
+        XCTAssertEqual(mocks.transcriptionService.testConnectionCallCount, 1)
+    }
+
+    @MainActor
+    func testCheckEndpointReachabilityFailure() async {
+        let (appState, mocks) = AppState.makeTestState()
+        appState.remoteEndpointURL = "http://192.168.1.10:9999"
+        mocks.transcriptionService.testConnectionResult = .failure(
+            RemoteTranscriptionError.httpError(status: 401, body: "")
+        )
+
+        await appState.checkEndpointReachability()
+
+        guard case .unreachable(let message) = appState.endpointStatus else {
+            return XCTFail("Expected .unreachable, got \(appState.endpointStatus)")
+        }
+        XCTAssertTrue(message.contains("401"))
+    }
+
+    @MainActor
+    func testRemoteEndpointSettingsRoundTrip() {
+        let (appState, _) = AppState.makeTestState()
+        XCTAssertEqual(appState.remoteEndpointURL, "")
+        XCTAssertEqual(appState.remoteEndpointFormat, RemoteEndpointFormat.openAI.rawValue)
+        XCTAssertEqual(appState.remoteAPIKey, "")
+        XCTAssertEqual(appState.remoteModelName, "")
+
+        appState.remoteEndpointURL = "http://myserver:8000"
+        appState.remoteEndpointFormat = RemoteEndpointFormat.whisperCpp.rawValue
+        appState.remoteAPIKey = "secret"
+        appState.remoteModelName = "whisper-1"
+
+        let config = RemoteEndpointConfiguration.fromUserDefaults()
+        XCTAssertEqual(config.baseURL, "http://myserver:8000")
+        XCTAssertEqual(config.format, .whisperCpp)
+        XCTAssertEqual(config.apiKey, "secret")
+        XCTAssertEqual(config.modelName, "whisper-1")
+
+        // Clean up shared defaults for other tests.
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.urlKey)
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.formatKey)
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.apiKeyKey)
+        UserDefaults.standard.removeObject(forKey: RemoteEndpointConfiguration.modelNameKey)
     }
 }

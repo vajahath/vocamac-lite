@@ -8,8 +8,8 @@
 # 3. Code signs — Developer ID if CODE_SIGN_IDENTITY is set, ad-hoc otherwise
 #
 # Environment variables:
-#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 0.7.0.
-#                         Set by CI for nightly builds (e.g., 0.7.0-nightly.20260512+abc1234).
+#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 0.1.0.
+#                         Set by CI from the release tag.
 #   CODE_SIGN_IDENTITY  — Signing identity to use. Defaults to auto-detect
 #                         Developer ID Application in the login keychain.
 #                         Set to "-" to force ad-hoc signing.
@@ -25,11 +25,11 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
 CONFIG="${1:-release}"
-BUNDLE_ID="com.vocamac.app"
+BUNDLE_ID="com.vocamac.lite"
 APP_NAME="VocaMac"
 APP_DIR="${APP_NAME}.app"
 ENTITLEMENTS="VocaMac.entitlements"
-APP_VERSION="${APP_VERSION:-0.7.0}"
+APP_VERSION="${APP_VERSION:-0.1.0}"
 
 # Resolve signing identity:
 # 1. Use CODE_SIGN_IDENTITY env var if set
@@ -103,18 +103,6 @@ echo "📦 Updating app bundle..."
 # Create bundle structure
 mkdir -p "${APP_DIR}/Contents/MacOS"
 mkdir -p "${APP_DIR}/Contents/Resources"
-mkdir -p "${APP_DIR}/Contents/Resources/BundledModels/whisperkit-coreml"
-
-BUNDLED_MODEL_SOURCE="${VOCAMAC_BUNDLED_MODEL_SOURCE:-}"
-if [ -n "$BUNDLED_MODEL_SOURCE" ]; then
-  if [ -d "$BUNDLED_MODEL_SOURCE" ]; then
-    echo "📦 Staging bundled model assets from: $BUNDLED_MODEL_SOURCE"
-    rsync -a --delete --exclude='.git' "$BUNDLED_MODEL_SOURCE"/ "${APP_DIR}/Contents/Resources/BundledModels/whisperkit-coreml/"
-  else
-    echo "❌ VOCAMAC_BUNDLED_MODEL_SOURCE does not exist: $BUNDLED_MODEL_SOURCE"
-    exit 1
-  fi
-fi
 
 # Update binary
 cp -f "$BINARY" "${APP_DIR}/Contents/MacOS/${APP_NAME}"
@@ -228,6 +216,13 @@ cat > "${APP_DIR}/Contents/Info.plist" << EOF
     <string>AppIcon</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>VocaMac needs microphone access to capture your voice for transcription.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>VocaMac sends recorded audio to your configured transcription server, which may be on your local network.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>

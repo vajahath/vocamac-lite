@@ -14,11 +14,6 @@ let package = Package(
             targets: ["VocaMac"]
         )
     ],
-    dependencies: [
-        // WhisperKit — local, on-device speech-to-text powered by CoreML
-        // https://github.com/argmaxinc/WhisperKit
-        .package(url: "https://github.com/argmaxinc/WhisperKit.git", from: "0.9.4"),
-    ],
     targets: [
         // Objective-C helpers used by the Swift app.
         .target(
@@ -31,7 +26,6 @@ let package = Package(
             name: "VocaMac",
             dependencies: [
                 "VocaMacObjC",
-                .product(name: "WhisperKit", package: "WhisperKit"),
             ],
             path: "Sources/VocaMac",
             resources: [

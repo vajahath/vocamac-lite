@@ -1,5 +1,6 @@
-# Updates the Homebrew tap cask (jatinkrmalik/homebrew-vocamac) when a GitHub Release is published.
+# Updates the Homebrew tap cask (vajahath/homebrew-vocamac-lite) when a GitHub Release is published.
 # Downloads the release DMG, computes its sha256, and commits the updated version+checksum to the tap repo.
+# Requires a HOMEBREW_TAP_TOKEN secret (PAT with write access to the tap repo).
 name: Update Homebrew Cask
 
 on:
@@ -24,7 +25,7 @@ jobs:
       - name: Download DMG artifact
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          DMG_URL="https://github.com/jatinkrmalik/vocamac/releases/download/v${VERSION}/VocaMac-${VERSION}-arm64.dmg"
+          DMG_URL="https://github.com/vajahath/vocamac-lite/releases/download/v${VERSION}/VocaMac-${VERSION}-arm64.dmg"
           curl -sL -o vocamac.dmg "$DMG_URL"
           echo "Downloaded DMG from ${DMG_URL}"
 
@@ -38,15 +39,15 @@ jobs:
       - name: Checkout tap repo
         uses: actions/checkout@v4
         with:
-          repository: jatinkrmalik/homebrew-vocamac
+          repository: vajahath/homebrew-vocamac-lite
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: homebrew-vocamac
+          path: homebrew-vocamac-lite
 
       - name: Update cask file
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SHA256="${{ steps.checksum.outputs.sha256 }}"
-          CASK_FILE="homebrew-vocamac/Casks/vocamac.rb"
+          CASK_FILE="homebrew-vocamac-lite/Casks/vocamac-lite.rb"
 
           # Update the version line
           sed -i "s/^  version \".*\"/  version \"${VERSION}\"/" "$CASK_FILE"
@@ -59,9 +60,9 @@ jobs:
       - name: Commit and push to tap repo
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          cd homebrew-vocamac
+          cd homebrew-vocamac-lite
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/vocamac.rb
-          git commit -m "chore: update vocamac to v${VERSION}"
+          git add Casks/vocamac-lite.rb
+          git commit -m "chore: update vocamac-lite to v${VERSION}"
           git push

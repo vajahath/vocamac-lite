@@ -125,41 +125,29 @@ struct MenuBarView: View {
                 .foregroundStyle(.blue)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("VocaMac")
+                Text("VocaMac Lite")
                     .font(.title3)
                     .fontWeight(.semibold)
 
-                if let model = appState.currentModel {
-                    // Model is loaded and ready
-                    Text("Model: \(model.size.displayName)")
+                switch appState.endpointStatus {
+                case .reachable:
+                    Text("Server: \(serverDisplayName)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                } else if appState.whisperService.isModelLoaded {
-                    // Loaded but currentModel wasn't set (shouldn't happen, but safety net)
-                    Text("Model: \(appState.whisperService.loadedModelName ?? "Loaded")")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else if let downloadingModel = appState.availableModels.first(where: { $0.downloadProgress != nil }),
-                          let progress = downloadingModel.downloadProgress {
-                    // A model is being downloaded — show progress
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Downloading \(downloadingModel.size.displayName)… \(Int(progress * 100))%")
-                            .font(.subheadline)
-                            .foregroundStyle(.orange)
-                        ProgressView(value: progress)
-                            .progressViewStyle(.linear)
-                            .tint(.orange)
-                    }
-                } else if let loadingModel = appState.availableModels.first(where: { $0.isLoading }) {
-                    // A model is being loaded (already downloaded, now initializing)
-                    Text("Loading \(loadingModel.size.displayName)…")
+                case .checking:
+                    Text("Checking server…")
                         .font(.subheadline)
                         .foregroundStyle(.orange)
-                } else {
-                    // Fallback: no model loaded and nothing actively in progress
-                    Text("No model loaded")
+                case .unreachable(let message):
+                    Text("Server unreachable")
                         .font(.subheadline)
                         .foregroundStyle(.orange)
+                        .help(message)
+                case .unconfigured:
+                    Text("No server configured")
+                        .font(.subheadline)
+                        .foregroundStyle(.orange)
+                        .help("Set the server URL in Settings → Endpoint")
                 }
             }
 
@@ -431,6 +419,16 @@ struct MenuBarView: View {
     }
 
     // MARK: - Helpers
+
+    /// Compact "host:port" for the configured server, without scheme/path noise.
+    private var serverDisplayName: String {
+        let raw = appState.remoteEndpointURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: raw), let host = url.host else { return raw }
+        if let port = url.port {
+            return "\(host):\(port)"
+        }
+        return host
+    }
 
     private var statusText: String {
         switch appState.appStatus {
