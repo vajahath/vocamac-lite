@@ -34,7 +34,7 @@ APP_NAME="VocaMac"
 APP_DISPLAY_NAME="VocaMac Lite"
 APP_DIR="${APP_DISPLAY_NAME}.app"
 ENTITLEMENTS="VocaMac.entitlements"
-APP_VERSION="${APP_VERSION:-1.0.1}"
+APP_VERSION="${APP_VERSION:-1.0.2}"
 
 # Resolve signing identity:
 # 1. Use CODE_SIGN_IDENTITY env var if set
