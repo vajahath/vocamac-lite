@@ -136,7 +136,7 @@ final class VocaLoggerTests: XCTestCase {
 
     func testExportLogsContainsHeader() {
         let exported = VocaLogger.exportLogs(lastLines: 10)
-        XCTAssertTrue(exported.contains("VocaMac Debug Log Export"),
+        XCTAssertTrue(exported.contains("VocaMac Lite Debug Log Export"),
                      "Exported logs should contain the header")
         XCTAssertTrue(exported.contains("Device:"),
                      "Exported logs should contain device info")
