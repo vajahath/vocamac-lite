@@ -132,13 +132,6 @@ final class AppStateRecordingTests: XCTestCase {
                      "Sound effects should be enabled by default")
     }
 
-    func testShowCursorIndicatorDefault() {
-        let (appState, _) = AppState.makeTestState()
-
-        XCTAssertTrue(appState.showCursorIndicator,
-                     "Cursor indicator should be shown by default")
-    }
-
     func testTranslationDisabledByDefault() {
         let (appState, _) = AppState.makeTestState()
 
@@ -296,8 +289,6 @@ final class AppStateForceRecoveryTests: XCTestCase {
             "errorMessage should be nil after force recovery")
         XCTAssertEqual(mocks.audioEngine.forceResetCallCount, 1,
             "forceReset should be called on audio engine")
-        XCTAssertEqual(mocks.cursorOverlay.hideCallCount, 1,
-            "cursor overlay should be hidden")
     }
 
     @MainActor
@@ -417,8 +408,6 @@ final class AppStateRecordingGuardTests: XCTestCase {
             "failed audio start should clear recording state")
         XCTAssertEqual(appState.audioLevel, 0.0,
             "failed audio start should reset audio level")
-        XCTAssertEqual(mocks.cursorOverlay.hideCallCount, 1,
-            "failed audio start should hide the cursor overlay")
         XCTAssertEqual(mocks.hotKeyManager.resetKeyStateCallCount, 1,
             "failed audio start should reset hotkey state")
         XCTAssertEqual(mocks.soundManager.startSoundCallCount, 0,

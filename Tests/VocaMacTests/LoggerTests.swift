@@ -13,7 +13,7 @@ final class LogCategoryTests: XCTestCase {
     func testAllCategoriesHaveRawValues() {
         let categories: [LogCategory] = [
             .appState, .audioEngine, .transcription, .hotKeyManager,
-            .soundManager, .textInjector, .cursorOverlay,
+            .soundManager, .textInjector,
             .onboarding, .general
         ]
 
@@ -27,7 +27,7 @@ final class LogCategoryTests: XCTestCase {
         // Convention: category raw values should start with an uppercase letter
         let categories: [LogCategory] = [
             .appState, .audioEngine, .transcription, .hotKeyManager,
-            .soundManager, .textInjector, .cursorOverlay,
+            .soundManager, .textInjector,
             .onboarding, .general
         ]
 
@@ -40,10 +40,10 @@ final class LogCategoryTests: XCTestCase {
 
     func testCategoryCount() {
         // Ensure we're testing all categories — update this if new ones are added
-        let expectedCount = 9
+        let expectedCount = 8
         let categories: [LogCategory] = [
             .appState, .audioEngine, .transcription, .hotKeyManager,
-            .soundManager, .textInjector, .cursorOverlay,
+            .soundManager, .textInjector,
             .onboarding, .general
         ]
         XCTAssertEqual(categories.count, expectedCount)

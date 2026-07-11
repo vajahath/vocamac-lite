@@ -81,16 +81,6 @@ protocol PermissionManaging: AnyObject {
     func requestInputMonitoringPermission()
 }
 
-// MARK: - CursorOverlayManaging
-
-@MainActor
-protocol CursorOverlayManaging: AnyObject {
-    func show()
-    func hide()
-    func transitionToProcessing()
-    func updateAudioLevel(_ level: Float)
-}
-
 // MARK: - SpeechTranscribing
 
 protocol SpeechTranscribing: AnyObject {

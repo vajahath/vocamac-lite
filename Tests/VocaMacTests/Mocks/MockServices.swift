@@ -212,32 +212,6 @@ final class MockPermissionManager: ObservableObject, PermissionManaging {
     }
 }
 
-// MARK: - MockCursorOverlay
-
-@MainActor
-final class MockCursorOverlay: CursorOverlayManaging {
-    var showCallCount = 0
-    var hideCallCount = 0
-    var transitionCallCount = 0
-    var lastAudioLevel: Float?
-
-    func show() {
-        showCallCount += 1
-    }
-
-    func hide() {
-        hideCallCount += 1
-    }
-
-    func transitionToProcessing() {
-        transitionCallCount += 1
-    }
-
-    func updateAudioLevel(_ level: Float) {
-        lastAudioLevel = level
-    }
-}
-
 // MARK: - MockTranscriptionService
 
 final class MockTranscriptionService: SpeechTranscribing {
@@ -322,7 +296,6 @@ extension AppState {
         let soundManager = MockSoundManager()
         let hotKeyManager = MockHotKeyManager()
         let permissionManager = MockPermissionManager()
-        let cursorOverlay = MockCursorOverlay()
         let textInjector = MockTextInjector()
         let statsManager = MockStatsManager()
 
@@ -331,7 +304,6 @@ extension AppState {
             soundManager: soundManager,
             hotKeyManager: hotKeyManager,
             permissionManager: permissionManager,
-            cursorOverlay: cursorOverlay,
             transcriptionService: transcriptionService,
             textInjector: textInjector,
             statsManager: statsManager
@@ -342,7 +314,6 @@ extension AppState {
             textInjector: textInjector,
             hotKeyManager: hotKeyManager,
             soundManager: soundManager,
-            cursorOverlay: cursorOverlay,
             statsManager: statsManager,
             permissionManager: permissionManager,
             skipSystemIntegration: true
@@ -356,7 +327,6 @@ struct TestMocks {
     let soundManager: MockSoundManager
     let hotKeyManager: MockHotKeyManager
     let permissionManager: MockPermissionManager
-    let cursorOverlay: MockCursorOverlay
     let transcriptionService: MockTranscriptionService
     let textInjector: MockTextInjector
     let statsManager: MockStatsManager

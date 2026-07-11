@@ -95,74 +95,81 @@ struct MenuBarView: View {
     @StateObject private var processMonitor = ProcessMonitor()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 10) {
             if let info = appState.updateChecker.activeUpdateInfo {
                 UpdateBannerView(info: info)
-                Divider()
+                menuDivider
             }
 
             // Header
             headerSection
 
-            Divider()
+            menuDivider
 
             // Status & Recording
             statusSection
 
             // Last Transcription
             if let transcription = appState.lastTranscription {
-                Divider()
+                menuDivider
                 transcriptionSection(transcription)
             }
 
             // Permissions Warning
             if appState.micPermission != .granted || appState.accessibilityPermission != .granted || appState.inputMonitoringPermission != .granted {
-                Divider()
+                menuDivider
                 permissionsSection
             }
 
-            Divider()
+            menuDivider
 
             // Quick Actions
             actionsSection
         }
-        .padding(20)
-        .frame(width: 380)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(width: 320)
         // Only poll CPU/RAM while the popover is actually open.
         .onAppear { processMonitor.startPolling() }
         .onDisappear { processMonitor.stopPolling() }
     }
 
+    /// Hairline separator matching the system menu's low-contrast dividers.
+    private var menuDivider: some View {
+        Divider()
+            .opacity(0.6)
+    }
+
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack {
+        HStack(spacing: 8) {
             Image(systemName: "mic.fill")
-                .font(.title)
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.blue)
+                .frame(width: 18)
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 1) {
                 Text("VocaMac Lite")
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 13, weight: .semibold))
 
                 switch appState.endpointStatus {
                 case .reachable:
                     Text("Server: \(serverDisplayName)")
-                        .font(.subheadline)
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 case .checking:
                     Text("Checking server…")
-                        .font(.subheadline)
+                        .font(.system(size: 11))
                         .foregroundStyle(.orange)
                 case .unreachable(let message):
                     Text("Server unreachable")
-                        .font(.subheadline)
+                        .font(.system(size: 11))
                         .foregroundStyle(.orange)
                         .help(message)
                 case .unconfigured:
                     Text("No server configured")
-                        .font(.subheadline)
+                        .font(.system(size: 11))
                         .foregroundStyle(.orange)
                         .help("Set the server URL in Settings → Endpoint")
                 }
@@ -171,7 +178,7 @@ struct MenuBarView: View {
             Spacer()
 
             // CPU & RAM usage display
-            HStack(spacing: 10) {
+            HStack(spacing: 6) {
                 ResourceBadge(
                     icon: "cpu",
                     value: String(format: "%.0f%%", processMonitor.cpuUsage),
@@ -198,28 +205,27 @@ struct MenuBarView: View {
     // MARK: - Status
 
     private var statusSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Circle()
                     .fill(statusColor)
-                    .frame(width: 10, height: 10)
+                    .frame(width: 7, height: 7)
 
                 Text(statusText)
-                    .font(.body)
-                    .fontWeight(.medium)
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(statusColor)
 
                 Spacer()
 
                 Text(activationModeHint)
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
 
             // Audio level indicator (visible during recording)
             if appState.appStatus == .recording {
                 AudioLevelView(level: appState.audioLevel)
-                    .frame(height: 6)
+                    .frame(height: 4)
 
                 // Stop/recovery button — visible during recording so the user
                 // can unstick the app if the hotkey isn't responding
@@ -229,7 +235,7 @@ struct MenuBarView: View {
                     }
                 } label: {
                     Label("Stop Recording", systemImage: "stop.circle.fill")
-                        .font(.callout)
+                        .font(.system(size: 12))
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
@@ -248,7 +254,7 @@ struct MenuBarView: View {
                     appState.forceRecovery()
                 } label: {
                     Label("Reset to Idle", systemImage: "arrow.counterclockwise.circle")
-                        .font(.callout)
+                        .font(.system(size: 12))
                         .foregroundStyle(.orange)
                 }
                 .buttonStyle(.plain)
@@ -259,10 +265,10 @@ struct MenuBarView: View {
     // MARK: - Transcription
 
     private func transcriptionSection(_ result: VocaTranscription) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Last Transcription")
-                    .font(.subheadline)
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
 
                 Spacer()
@@ -272,19 +278,20 @@ struct MenuBarView: View {
                     NSPasteboard.general.setString(result.text, forType: .string)
                 } label: {
                     Image(systemName: "doc.on.doc")
-                        .font(.subheadline)
+                        .font(.system(size: 11))
                 }
                 .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
                 .help("Copy to clipboard")
             }
 
             Text(result.text)
-                .font(.body)
+                .font(.system(size: 12))
                 .lineLimit(4)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(10)
-                .background(Color.secondary.opacity(0.1))
-                .cornerRadius(8)
+                .padding(8)
+                .background(Color.primary.opacity(0.05))
+                .cornerRadius(6)
 
             HStack {
                 Text("\(String(format: "%.1f", result.audioLengthSeconds))s audio")
@@ -293,7 +300,7 @@ struct MenuBarView: View {
                 Text("•")
                 Text(result.detectedLanguage)
             }
-            .font(.caption)
+            .font(.system(size: 11))
             .foregroundStyle(.secondary)
         }
     }
@@ -301,9 +308,9 @@ struct MenuBarView: View {
     // MARK: - Permissions
 
     private var permissionsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 7) {
             Text("Permissions Required")
-                .font(.subheadline)
+                .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.orange)
 
             if appState.micPermission != .granted {
@@ -317,7 +324,7 @@ struct MenuBarView: View {
                 Text(appState.micPermission == .denied
                      ? "Denied. Enable in System Settings → Privacy & Security → Microphone."
                      : "Required to capture your voice for transcription.")
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -331,7 +338,7 @@ struct MenuBarView: View {
                 )
 
                 Text("Required for global hotkeys and text injection. Opens System Settings.")
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -345,7 +352,7 @@ struct MenuBarView: View {
                 )
 
                 Text("Required to detect hotkey presses system-wide. Enable VocaMac Lite in the list.")
-                    .font(.caption)
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -358,7 +365,7 @@ struct MenuBarView: View {
             action()
         } label: {
             Label(label, systemImage: icon)
-                .font(.callout)
+                .font(.system(size: 12, weight: .medium))
         }
         .buttonStyle(.plain)
         .foregroundStyle(isDenied ? .red : .orange)
@@ -367,72 +374,50 @@ struct MenuBarView: View {
     // MARK: - Actions
 
     private var actionsSection: some View {
-        VStack(spacing: 2) {
-            Button {
+        VStack(spacing: 1) {
+            menuActionRow(icon: "gear", title: "Settings", shortcut: "⌘,") {
                 settingsManager.open(appState: appState)
-            } label: {
-                HStack {
-                    Image(systemName: "gear")
-                    Text("Settings")
-                    Spacer()
-                    Text("⌘,")
-                        .foregroundStyle(.secondary)
-                }
-                .font(.body)
-                .padding(.vertical, 6)
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.primary.opacity(0.0001))
-                )
             }
-            .buttonStyle(MenuRowButtonStyle())
 
-            Button {
+            menuActionRow(icon: "wand.and.stars", title: "Setup Wizard", shortcut: nil) {
                 NotificationCenter.default.post(name: .showOnboarding, object: nil)
-            } label: {
-                HStack {
-                    Image(systemName: "wand.and.stars")
-                    Text("Setup Wizard")
-                    Spacer()
-                }
-                .font(.body)
-                .padding(.vertical, 6)
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.primary.opacity(0.0001))
-                )
             }
-            .buttonStyle(MenuRowButtonStyle())
 
-            Button {
+            menuActionRow(icon: "power", title: "Quit VocaMac Lite", shortcut: "⌘Q") {
                 NSApplication.shared.terminate(nil)
-            } label: {
-                HStack {
-                    Image(systemName: "power")
-                    Text("Quit VocaMac Lite")
-                    Spacer()
-                    Text("⌘Q")
-                        .foregroundStyle(.secondary)
-                }
-                .font(.body)
-                .padding(.vertical, 6)
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color.primary.opacity(0.0001))
-                )
             }
-            .buttonStyle(MenuRowButtonStyle())
         }
         .padding(.horizontal, -8)
+    }
+
+    /// A single action row styled like a native macOS menu item: fixed-width
+    /// icon column, consistent 13pt label, trailing shortcut hint, and a
+    /// hover highlight spanning the full row width.
+    private func menuActionRow(icon: String, title: String, shortcut: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                    .frame(width: 16)
+                Text(title)
+                    .font(.system(size: 13))
+                Spacer()
+                if let shortcut {
+                    Text(shortcut)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 5)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color.primary.opacity(0.0001))
+            )
+        }
+        .buttonStyle(MenuRowButtonStyle())
     }
 
     // MARK: - Helpers

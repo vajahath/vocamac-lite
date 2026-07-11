@@ -107,7 +107,6 @@ final class AppState: ObservableObject {
     @AppStorage("vocamac.launchAtLogin") var launchAtLogin: Bool = false
     @AppStorage("vocamac.preserveClipboard") var preserveClipboard: Bool = true
     @AppStorage("vocamac.soundEffectsEnabled") var soundEffectsEnabled: Bool = true
-    @AppStorage("vocamac.showCursorIndicator") var showCursorIndicator: Bool = true
     @AppStorage("vocamac.translationEnabled") var translationEnabled: Bool = false
     @AppStorage("vocamac.customVocabulary") var customVocabulary: String = ""
     @AppStorage("vocamac.logLevel") var logLevel: String = "info"
@@ -131,7 +130,6 @@ final class AppState: ObservableObject {
     let textInjector: TextInjecting
     let hotKeyManager: HotKeyMonitoring
     let soundManager: SoundPlaying
-    let cursorOverlay: CursorOverlayManaging
     let statsManager: StatsManaging
     let updateChecker = UpdateChecker()
     let permissionManager: any PermissionManaging
@@ -185,7 +183,6 @@ final class AppState: ObservableObject {
         textInjector: TextInjecting = TextInjector(),
         hotKeyManager: HotKeyMonitoring = HotKeyManager(),
         soundManager: SoundPlaying = SoundManager(),
-        cursorOverlay: CursorOverlayManaging,
         statsManager: StatsManaging,
         permissionManager: (any PermissionManaging)? = nil,
         skipSystemIntegration: Bool = false
@@ -195,7 +192,6 @@ final class AppState: ObservableObject {
         self.textInjector = textInjector
         self.hotKeyManager = hotKeyManager
         self.soundManager = soundManager
-        self.cursorOverlay = cursorOverlay
         self.statsManager = statsManager
         self.permissionManager = permissionManager ?? PermissionManager(audioEngine: audioEngine, hotKeyManager: hotKeyManager)
         self.skipSystemIntegration = skipSystemIntegration
@@ -230,12 +226,11 @@ final class AppState: ObservableObject {
     /// taps, audio observers, and stale SwiftUI environment objects.
     @MainActor
     private static let sharedProductionInstance = AppState(
-        cursorOverlay: CursorOverlayManager(),
         statsManager: StatsManager()
     )
 
     /// Convenience factory for creating AppState with all real services.
-    /// Needed because CursorOverlayManager is @MainActor and can't be a default parameter.
+    /// Needed because StatsManager is @MainActor and can't be a default parameter.
     @MainActor
     static func production() -> AppState {
         VocaLogger.debug(.appState, "Using production AppState id=\(ObjectIdentifier(sharedProductionInstance))")
@@ -304,7 +299,6 @@ final class AppState: ObservableObject {
         audioEngine.onAudioLevel = { [weak self] level in
             Task { @MainActor in
                 self?.audioLevel = level
-                self?.cursorOverlay.updateAudioLevel(level)
             }
         }
 
@@ -342,7 +336,6 @@ final class AppState: ObservableObject {
                 VocaLogger.warning(.appState, "Audio device changed — recovering from interrupted recording")
                 self.isRecording = false
                 self.audioLevel = 0.0
-                self.cursorOverlay.hide()
                 self.hotKeyManager.resetKeyState()
                 self.appStatus = .idle
                 self.errorMessage = nil
@@ -448,7 +441,6 @@ final class AppState: ObservableObject {
         // Reset UI state
         isRecording = false
         audioLevel = 0.0
-        cursorOverlay.hide()
         appStatus = .idle
         errorMessage = nil
     }
@@ -487,11 +479,6 @@ final class AppState: ObservableObject {
         isRecording = true
         errorMessage = nil
 
-        // Show cursor indicator
-        if showCursorIndicator {
-            cursorOverlay.show()
-        }
-
         // Start recording immediately for instant responsiveness.
         // The start sound is played concurrently — any brief bleed into the
         // mic buffer is negligible and handled well by Whisper's noise model.
@@ -506,7 +493,6 @@ final class AppState: ObservableObject {
             VocaLogger.warning(.appState, "Audio engine failed to start — resetting recording state")
             isRecording = false
             audioLevel = 0.0
-            cursorOverlay.hide()
             hotKeyManager.resetKeyState()
             appStatus = .idle
             return
@@ -533,12 +519,7 @@ final class AppState: ObservableObject {
             soundManager.playStopSound()
         }
 
-        // Transition cursor indicator to processing state (red -> purple)
-        // Keeps the overlay visible so the user knows text is on its way
-        cursorOverlay.transitionToProcessing()
-
         guard !audioData.isEmpty else {
-            cursorOverlay.hide()
             appStatus = .idle
             return
         }
@@ -571,10 +552,8 @@ final class AppState: ObservableObject {
                 VocaLogger.info(.appState, "Transcription produced no usable text (silence or blank audio)")
             }
 
-            cursorOverlay.hide()
             appStatus = .idle
         } catch {
-            cursorOverlay.hide()
             errorMessage = "Transcription failed: \(error.localizedDescription)"
             appStatus = .error
 
