@@ -439,8 +439,7 @@ struct EndpointSetupStep: View {
 
                 DisclosureGroup("Advanced (optional)", isExpanded: $showAdvanced) {
                     VStack(alignment: .leading, spacing: 8) {
-                        SecureField("API key (Bearer token)", text: $appState.remoteAPIKey)
-                            .textFieldStyle(.roundedBorder)
+                        APIKeyField(placeholder: "API key (Bearer token)", text: $appState.remoteAPIKey)
 
                         TextField("Model name", text: $appState.remoteModelName, prompt: Text("Systran/faster-whisper-small"))
                             .textFieldStyle(.roundedBorder)

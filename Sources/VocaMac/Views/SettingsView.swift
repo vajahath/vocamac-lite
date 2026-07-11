@@ -276,8 +276,7 @@ struct EndpointSettingsTab: View {
             }
 
             Section("Authentication (optional)") {
-                SecureField("API key", text: $appState.remoteAPIKey)
-                    .textFieldStyle(.roundedBorder)
+                APIKeyField(placeholder: "API key", text: $appState.remoteAPIKey)
 
                 Text("Sent as a Bearer token. Stored unencrypted in app preferences — use HTTPS and a key when the server is outside your trusted network.")
                     .font(.caption)
@@ -354,6 +353,51 @@ struct EndpointStatusView: View {
             }
         }
         .font(.caption)
+    }
+}
+
+/// API-key entry that avoids `SecureField`. A SecureField is an
+/// NSSecureTextField, which opts into macOS Password AutoFill and makes the
+/// system spawn a separate "AutoFill" helper process (~12 MB) whenever the
+/// field is shown. This field masks the value with a reveal toggle instead, so
+/// no helper is launched.
+struct APIKeyField: View {
+    let placeholder: String
+    @Binding var text: String
+    @State private var isRevealed = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if isRevealed {
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
+            } else {
+                Text(text.isEmpty ? placeholder : String(repeating: "•", count: min(text.count, 24)))
+                    .foregroundStyle(text.isEmpty ? .tertiary : .primary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color(nsColor: .textBackgroundColor))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color(nsColor: .separatorColor))
+                            )
+                    )
+            }
+
+            Button {
+                isRevealed.toggle()
+            } label: {
+                Image(systemName: isRevealed ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help(isRevealed ? "Hide key" : "Reveal key to edit")
+        }
     }
 }
 

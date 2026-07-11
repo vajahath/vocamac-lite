@@ -24,9 +24,6 @@ final class CursorOverlayManager {
     /// The SwiftUI view model driving the indicator
     private let viewModel = MicIndicatorViewModel()
 
-    /// Timer to periodically reposition the overlay to follow the cursor
-    private var repositionTimer: Timer?
-
     // MARK: - Public API
 
     /// Show the recording indicator near the text cursor
@@ -57,20 +54,16 @@ final class CursorOverlayManager {
         panel.ignoresMouseEvents = true
         panel.contentView = hosting
 
-        // Position near the text cursor
+        // Position at the text caret once, then leave it fixed for the whole
+        // recording. We deliberately do NOT reposition on a timer: re-running
+        // the Accessibility probe returns slightly different anchors from one
+        // call to the next (caret vs. element vs. window), which made the
+        // indicator visibly jump ~0.5s after it appeared.
         positionNearCaret(panel)
 
         panel.orderFront(nil)
         overlayPanel = panel
         hostingView = hosting
-
-        // Reposition periodically in case the user scrolls or the cursor moves
-        repositionTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self = self, let panel = self.overlayPanel else { return }
-                self.positionNearCaret(panel)
-            }
-        }
 
         viewModel.isActive = true
         VocaLogger.debug(.cursorOverlay, "Indicator shown (recording)")
@@ -85,8 +78,6 @@ final class CursorOverlayManager {
 
     /// Hide the recording indicator
     func hide() {
-        repositionTimer?.invalidate()
-        repositionTimer = nil
         viewModel.isActive = false
         viewModel.phase = .idle
         overlayPanel?.orderOut(nil)

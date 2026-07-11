@@ -8,35 +8,49 @@ import SwiftUI
 
 // MARK: - Process Monitor
 
-/// Polls the current process for CPU and memory usage every 5 seconds.
+/// Polls the current process for CPU and memory usage while the menu popover
+/// is open. Polling is paused when the popover closes (see MenuBarView's
+/// onAppear/onDisappear) so an idle menu bar app isn't waking up every 5s.
 final class ProcessMonitor: ObservableObject {
     @Published var cpuUsage: Double = 0       // percentage (0–100+)
-    @Published var memoryMB: Double = 0       // resident memory in MB
-    @Published var memoryPeakMB: Double = 0   // peak memory seen
+    @Published var memoryMB: Double = 0       // phys_footprint in MB (matches Activity Monitor)
+    @Published var memoryPeakMB: Double = 0   // peak footprint seen
     @Published var threadCount: Int = 0       // active thread count
 
     private var timer: Timer?
 
-    init() {
+    /// Begin polling and refresh immediately. Safe to call repeatedly.
+    func startPolling() {
+        guard timer == nil else { return }
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             self?.refresh()
         }
     }
 
+    /// Stop polling while the popover is closed.
+    func stopPolling() {
+        timer?.invalidate()
+        timer = nil
+    }
+
     deinit { timer?.invalidate() }
 
     func refresh() {
-        // --- Memory via mach_task_basic_info ---
-        var taskInfo = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
-        let kr = withUnsafeMutablePointer(to: &taskInfo) {
+        // --- Memory via task_vm_info.phys_footprint ---
+        // phys_footprint is what Activity Monitor's "Memory" column reports: the
+        // app's private/dirty memory. We deliberately do NOT use resident_size,
+        // which also counts shared OS framework pages (AppKit, SwiftUI, …) and
+        // inflates the figure ~3x even though that memory is shared across apps.
+        var vmInfo = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<natural_t>.size)
+        let kr = withUnsafeMutablePointer(to: &vmInfo) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
             }
         }
         if kr == KERN_SUCCESS {
-            let mb = Double(taskInfo.resident_size) / (1024 * 1024)
+            let mb = Double(vmInfo.phys_footprint) / (1024 * 1024)
             DispatchQueue.main.async {
                 self.memoryMB = mb
                 self.memoryPeakMB = max(self.memoryPeakMB, mb)
@@ -114,6 +128,9 @@ struct MenuBarView: View {
         }
         .padding(20)
         .frame(width: 380)
+        // Only poll CPU/RAM while the popover is actually open.
+        .onAppear { processMonitor.startPolling() }
+        .onDisappear { processMonitor.stopPolling() }
     }
 
     // MARK: - Header
@@ -169,7 +186,7 @@ struct MenuBarView: View {
                     icon: "memorychip",
                     value: formattedMemory(processMonitor.memoryMB),
                     details: [
-                        ("Resident", String(format: "%.1f MB", processMonitor.memoryMB)),
+                        ("Footprint", String(format: "%.1f MB", processMonitor.memoryMB)),
                         ("Peak", String(format: "%.1f MB", processMonitor.memoryPeakMB)),
                         ("System", "\(ProcessInfo.processInfo.physicalMemory / (1024 * 1024 * 1024)) GB"),
                     ]
