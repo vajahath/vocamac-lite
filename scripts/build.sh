@@ -8,7 +8,7 @@
 # 3. Code signs — Developer ID if CODE_SIGN_IDENTITY is set, ad-hoc otherwise
 #
 # Environment variables:
-#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 1.0.1.
+#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 1.0.2.
 #                         Set by CI from the release tag.
 #   CODE_SIGN_IDENTITY  — Signing identity to use. Defaults to auto-detect
 #                         Developer ID Application in the login keychain.
