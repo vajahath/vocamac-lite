@@ -1,6 +1,7 @@
 # Updates the Homebrew tap cask (vajahath/homebrew-vocamac-lite) when a GitHub Release is published.
 # Downloads the release DMG, computes its sha256, and commits the updated version+checksum to the tap repo.
 # Requires a HOMEBREW_TAP_TOKEN secret (PAT with write access to the tap repo).
+# If the secret is not set, the job skips cleanly (the cask can be updated manually).
 name: Update Homebrew Cask
 
 on:
@@ -11,10 +12,24 @@ jobs:
   update-cask:
     runs-on: ubuntu-latest
     steps:
+      - name: Check for tap token
+        id: guard
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -n "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::HOMEBREW_TAP_TOKEN is not set — skipping automatic cask update. Update the cask manually or add the secret."
+          fi
+
       - name: Checkout main repo
+        if: steps.guard.outputs.has_token == 'true'
         uses: actions/checkout@v4
 
       - name: Extract version from release tag
+        if: steps.guard.outputs.has_token == 'true'
         id: version
         run: |
           TAG="${{ github.event.release.tag_name }}"
@@ -23,6 +38,7 @@ jobs:
           echo "Extracted version: ${VERSION}"
 
       - name: Download DMG artifact
+        if: steps.guard.outputs.has_token == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           DMG_URL="https://github.com/vajahath/vocamac-lite/releases/download/v${VERSION}/VocaMac-${VERSION}-arm64.dmg"
@@ -30,6 +46,7 @@ jobs:
           echo "Downloaded DMG from ${DMG_URL}"
 
       - name: Compute DMG sha256
+        if: steps.guard.outputs.has_token == 'true'
         id: checksum
         run: |
           SHA256=$(shasum -a 256 vocamac.dmg | cut -d' ' -f1)
@@ -37,6 +54,7 @@ jobs:
           echo "Computed sha256: ${SHA256}"
 
       - name: Checkout tap repo
+        if: steps.guard.outputs.has_token == 'true'
         uses: actions/checkout@v4
         with:
           repository: vajahath/homebrew-vocamac-lite
@@ -44,6 +62,7 @@ jobs:
           path: homebrew-vocamac-lite
 
       - name: Update cask file
+        if: steps.guard.outputs.has_token == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SHA256="${{ steps.checksum.outputs.sha256 }}"
@@ -58,6 +77,7 @@ jobs:
           grep -E "^\s+(version|sha256)" "$CASK_FILE"
 
       - name: Commit and push to tap repo
+        if: steps.guard.outputs.has_token == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           cd homebrew-vocamac-lite
