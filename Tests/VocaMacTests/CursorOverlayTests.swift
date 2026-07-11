@@ -1,5 +1,5 @@
 // CursorOverlayTests.swift
-// VocaMac
+// VocaMac Lite
 //
 // Tests for CursorOverlayManager, IndicatorPhase, and MicIndicatorViewModel.
 

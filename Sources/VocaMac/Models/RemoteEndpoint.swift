@@ -1,5 +1,5 @@
 // RemoteEndpoint.swift
-// VocaMac
+// VocaMac Lite
 //
 // Configuration types for the remote transcription endpoint.
 

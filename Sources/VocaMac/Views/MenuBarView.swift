@@ -1,5 +1,5 @@
 // MenuBarView.swift
-// VocaMac
+// VocaMac Lite
 //
 // The popover view shown when clicking the menu bar icon.
 // Displays current status, audio level, last transcription, and quick actions.
@@ -327,7 +327,7 @@ struct MenuBarView: View {
                     action: { appState.requestInputMonitoringPermission() }
                 )
 
-                Text("Required to detect hotkey presses system-wide. Enable VocaMac in the list.")
+                Text("Required to detect hotkey presses system-wide. Enable VocaMac Lite in the list.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -398,7 +398,7 @@ struct MenuBarView: View {
             } label: {
                 HStack {
                     Image(systemName: "power")
-                    Text("Quit VocaMac")
+                    Text("Quit VocaMac Lite")
                     Spacer()
                     Text("⌘Q")
                         .foregroundStyle(.secondary)

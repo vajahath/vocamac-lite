@@ -1,5 +1,5 @@
 // UserStats.swift
-// VocaMac
+// VocaMac Lite
 //
 // Data model for tracking user usage statistics.
 

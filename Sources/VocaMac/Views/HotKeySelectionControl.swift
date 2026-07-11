@@ -1,5 +1,5 @@
 // HotKeySelectionControl.swift
-// VocaMac
+// VocaMac Lite
 //
 // Reusable hotkey picker with direct key recording for settings and onboarding.
 

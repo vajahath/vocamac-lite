@@ -1,5 +1,5 @@
 // TextInjector.swift
-// VocaMac
+// VocaMac Lite
 //
 // Injects transcribed text at the cursor position in any application
 // using the clipboard (NSPasteboard) + simulated Cmd+V keystroke approach.

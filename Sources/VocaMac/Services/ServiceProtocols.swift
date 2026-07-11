@@ -1,5 +1,5 @@
 // ServiceProtocols.swift
-// VocaMac
+// VocaMac Lite
 //
 // Protocol abstractions for all services that AppState depends on.
 // Enables dependency injection and test mocking.

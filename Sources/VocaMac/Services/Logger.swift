@@ -1,5 +1,5 @@
 // Logger.swift
-// VocaMac
+// VocaMac Lite
 //
 // System-wide logging framework with os.Logger integration,
 // persistent file logging, and automatic log rotation.
@@ -29,7 +29,7 @@ enum LogLevel: String {
     case error = "ERROR"
 }
 
-/// Unified logging framework for VocaMac
+/// Unified logging framework for VocaMac Lite
 /// Combines os.Logger (Console.app integration) with persistent file logging
 /// with automatic size-based rotation.
 final class VocaLogger {
@@ -276,7 +276,7 @@ final class VocaLogger {
     private func formatExportedLogs(lastLines: Int = 500) -> String {
         var result = ""
 
-        result += "=== VocaMac Debug Log Export ===\n"
+        result += "=== VocaMac Lite Debug Log Export ===\n"
         result += "Generated: \(dateFormatter.string(from: Date()))\n"
 
         let capabilities = SystemInfo.detect()

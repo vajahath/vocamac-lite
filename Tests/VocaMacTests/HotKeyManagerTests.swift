@@ -1,5 +1,5 @@
 // HotKeyManagerTests.swift
-// VocaMac
+// VocaMac Lite
 //
 // Tests for HotKeyManager configuration and state logic.
 

@@ -1,5 +1,5 @@
 // AppState.swift
-// VocaMac
+// VocaMac Lite
 //
 // Central observable state for the entire application.
 // All UI and services react to changes in AppState.

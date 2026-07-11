@@ -1,5 +1,5 @@
 // AudioEngine.swift
-// VocaMac
+// VocaMac Lite
 //
 // Real-time microphone audio capture using AVAudioEngine.
 // Captures audio in the format required by whisper.cpp (16kHz, mono, Float32 PCM).
@@ -585,7 +585,7 @@ final class AudioEngine {
     }
 
     /// Configure this engine's input unit to use a specific Core Audio device.
-    /// This is scoped to VocaMac's AudioUnit and does not change macOS' global default input.
+    /// This is scoped to VocaMac Lite's AudioUnit and does not change macOS' global default input.
     private func configurePreferredInputDevice(_ preferredInputDeviceID: String?, on inputNode: AVAudioInputNode) {
         guard let preferredInputDeviceID,
               !preferredInputDeviceID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {

@@ -1,5 +1,5 @@
 // UpdateInfo.swift
-// VocaMac
+// VocaMac Lite
 //
 // Models for GitHub release update checks and update UI state.
 

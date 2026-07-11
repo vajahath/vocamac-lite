@@ -1,5 +1,5 @@
 // PermissionManager.swift
-// VocaMac
+// VocaMac Lite
 //
 // Manages system permission checking, requesting, and polling.
 // Extracts permission logic from AppState for focused responsibility.

@@ -1,5 +1,5 @@
 // HotKeyManager.swift
-// VocaMac
+// VocaMac Lite
 //
 // Listens for global hotkey events using CGEventTap.
 // Supports push-to-talk (hold key) and double-tap toggle modes.

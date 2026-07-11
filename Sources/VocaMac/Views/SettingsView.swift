@@ -1,7 +1,7 @@
 // SettingsView.swift
-// VocaMac
+// VocaMac Lite
 //
-// Settings window for VocaMac configuration.
+// Settings window for VocaMac Lite configuration.
 // Organized into tabs: General, Endpoint, Stats, Audio, Debug, About.
 
 import SwiftUI
@@ -78,7 +78,7 @@ struct GeneralSettingsTab: View {
             Section("Hotkey") {
                 HotKeySelectionControl(
                     pickerLabel: "Activation Key",
-                    footerText: "Choose a preset or record a key. VocaMac reserves this key while running."
+                    footerText: "Choose a preset or record a key. VocaMac Lite reserves this key while running."
                 )
 
                 if appState.activationMode == .doubleTapToggle {
@@ -167,12 +167,12 @@ struct GeneralSettingsTab: View {
 
                 let count = RemoteTranscriptionService.vocabularyTerms(from: appState.customVocabulary).count
                 Text(count == 0
-                    ? "Add names, jargon, or proper nouns (one per line, or comma-separated) that get mis-transcribed. VocaMac hints these to the model so it spells them right."
+                    ? "Add names, jargon, or proper nouns (one per line, or comma-separated) that get mis-transcribed. VocaMac Lite hints these to the model so it spells them right."
                     : "\(count) term\(count == 1 ? "" : "s"). Keep the list short, since the model can only use the first 50 to 100 words as a hint.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text("For best results, enter terms in the language you dictate and set a matching Transcription Language above. In Auto-detect, the terms can also nudge which language VocaMac picks.")
+                Text("For best results, enter terms in the language you dictate and set a matching Transcription Language above. In Auto-detect, the terms can also nudge which language VocaMac Lite picks.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -446,14 +446,14 @@ struct AudioSettingsTab: View {
                     HStack(alignment: .top) {
                         Image(systemName: "exclamationmark.triangle")
                             .foregroundStyle(.orange)
-                        Text("\(selectedAudioDeviceDisplayName) is unavailable. VocaMac will use System Default until it reconnects.")
+                        Text("\(selectedAudioDeviceDisplayName) is unavailable. VocaMac Lite will use System Default until it reconnects.")
                             .foregroundStyle(.secondary)
                     }
                 } else if let selectedAudioDevice {
                     HStack {
                         Image(systemName: "mic.circle.fill")
                             .foregroundStyle(.blue)
-                        Text("VocaMac will record from \(selectedAudioDevice.name) without changing macOS' system default input.")
+                        Text("VocaMac Lite will record from \(selectedAudioDevice.name) without changing macOS' system default input.")
                             .foregroundStyle(.secondary)
                     }
                 } else {
@@ -466,7 +466,7 @@ struct AudioSettingsTab: View {
                 }
                 .controlSize(.small)
 
-                Text("Choose System Default to follow macOS, or pin VocaMac to a specific microphone.")
+                Text("Choose System Default to follow macOS, or pin VocaMac Lite to a specific microphone.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -492,9 +492,9 @@ struct AudioSettingsTab: View {
 
     private var systemDefaultInputDescription: String {
         if let defaultDevice = audioDevices.first(where: { $0.isDefault }) {
-            return "VocaMac will follow macOS' system default input: \(defaultDevice.name)."
+            return "VocaMac Lite will follow macOS' system default input: \(defaultDevice.name)."
         }
-        return "VocaMac will follow macOS' system default input."
+        return "VocaMac Lite will follow macOS' system default input."
     }
 
     private func audioDeviceLabel(for device: AudioDevice) -> String {
@@ -749,7 +749,7 @@ struct DebugTab: View {
                             .foregroundStyle(.red)
                     }
                     .controlSize(.small)
-                    .help("Reset all TCC permissions for VocaMac. The app will quit and you'll need to re-grant permissions on next launch.")
+                    .help("Reset all TCC permissions for VocaMac Lite. The app will quit and you'll need to re-grant permissions on next launch.")
                 }
 
                 HStack(alignment: .top, spacing: 8) {
@@ -809,18 +809,18 @@ struct DebugTab: View {
             Section("Application") {
                 HStack {
                     Button(action: restartApp) {
-                        Label("Restart VocaMac", systemImage: "arrow.trianglehead.clockwise")
+                        Label("Restart VocaMac Lite", systemImage: "arrow.trianglehead.clockwise")
                     }
-                    .help("Quit and relaunch VocaMac")
+                    .help("Quit and relaunch VocaMac Lite")
 
                     Spacer()
 
                     Button(role: .destructive, action: {
                         NSApplication.shared.terminate(nil)
                     }) {
-                        Label("Quit VocaMac", systemImage: "power")
+                        Label("Quit VocaMac Lite", systemImage: "power")
                     }
-                    .help("Quit VocaMac")
+                    .help("Quit VocaMac Lite")
                 }
 
                 Text("Restart can help resolve issues with permissions or audio devices.")
@@ -836,7 +836,7 @@ struct DebugTab: View {
     private func resetPermissions() {
         let alert = NSAlert()
         alert.messageText = "Reset All Permissions?"
-        alert.informativeText = "This will clear all permission grants (Microphone, Accessibility, Input Monitoring) for VocaMac. The app will quit and you'll need to re-grant permissions on next launch.\n\nThis is useful when permissions appear stuck or aren't being recognized after an update."
+        alert.informativeText = "This will clear all permission grants (Microphone, Accessibility, Input Monitoring) for VocaMac Lite. The app will quit and you'll need to re-grant permissions on next launch.\n\nThis is useful when permissions appear stuck or aren't being recognized after an update."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Reset & Quit")
         alert.addButton(withTitle: "Cancel")
@@ -886,7 +886,7 @@ struct DebugTab: View {
 
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.plainText]
-        savePanel.nameFieldStringValue = "VocaMac-Debug-\(ISO8601DateFormatter().string(from: Date()).prefix(19)).log"
+        savePanel.nameFieldStringValue = "VocaMac Lite-Debug-\(ISO8601DateFormatter().string(from: Date()).prefix(19)).log"
         savePanel.directoryURL = FileManager.default.homeDirectoryForCurrentUser
 
         savePanel.begin { response in

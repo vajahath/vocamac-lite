@@ -1,5 +1,5 @@
 // AppStateRecordingTests.swift
-// VocaMac
+// VocaMac Lite
 //
 // Tests for AppState recording flow and state transitions.
 

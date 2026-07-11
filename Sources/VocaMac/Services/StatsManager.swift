@@ -1,5 +1,5 @@
 // StatsManager.swift
-// VocaMac
+// VocaMac Lite
 //
 // Manages the persistence and updating of user statistics.
 

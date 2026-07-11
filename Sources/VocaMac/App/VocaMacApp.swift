@@ -1,7 +1,7 @@
 // VocaMacApp.swift
-// VocaMac
+// VocaMac Lite
 //
-// Main entry point for the VocaMac application.
+// Main entry point for the VocaMac Lite application.
 // Configures the app as a menu bar-only application (no Dock icon).
 
 import SwiftUI
@@ -29,7 +29,7 @@ final class SettingsWindowManager: ObservableObject {
             backing: .buffered,
             defer: false
         )
-        window.title = "VocaMac Settings"
+        window.title = "VocaMac Lite Settings"
         window.contentView = NSHostingView(rootView: settingsView)
         window.center()
         window.isReleasedWhenClosed = false
@@ -87,7 +87,7 @@ final class OnboardingWindowManager: ObservableObject {
             backing: .buffered,
             defer: false
         )
-        window.title = "Welcome to VocaMac"
+        window.title = "Welcome to VocaMac Lite"
         window.contentView = NSHostingView(rootView: onboardingView)
         window.center()
         window.isReleasedWhenClosed = false
@@ -140,7 +140,7 @@ struct VocaMacApp: App {
     @StateObject private var onboardingManager = OnboardingWindowManager()
 
     var body: some Scene {
-        // Menu bar presence — the primary UI for VocaMac
+        // Menu bar presence — the primary UI for VocaMac Lite
         MenuBarExtra {
             MenuBarView(settingsManager: settingsManager)
                 .environmentObject(appState)
@@ -159,7 +159,7 @@ struct VocaMacApp: App {
     }
 
     @MainActor init() {
-        // Ensure only one instance of VocaMac is running
+        // Ensure only one instance of VocaMac Lite is running
         Self.ensureSingleInstance()
 
         // For .app bundles, Dock hiding is handled by LSUIElement=true in Info.plist.
@@ -227,16 +227,25 @@ struct MenuBarIcon: View {
     private func makeMenuBarIcon() -> NSImage {
         let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
 
-        guard let baseImage = NSImage(systemSymbolName: iconName, accessibilityDescription: "VocaMac")?
+        guard let baseImage = NSImage(systemSymbolName: iconName, accessibilityDescription: "VocaMac Lite")?
             .withSymbolConfiguration(config) else {
             // Fallback to a basic mic if symbol lookup fails
-            return NSImage(systemSymbolName: "mic", accessibilityDescription: "VocaMac") ?? NSImage()
+            let fallback = NSImage(systemSymbolName: "mic", accessibilityDescription: "VocaMac Lite") ?? NSImage()
+            fallback.isTemplate = true
+            return fallback
         }
 
-        // Tint the icon with the status color
-        let tintColor = nsColor
-        let size = baseImage.size
+        // Idle: no explicit color. Render as a template image so macOS tints it
+        // to match the menu bar — black in light mode, white in dark mode — like
+        // the standard system menu bar icons.
+        guard let tintColor = nsColor else {
+            baseImage.isTemplate = true
+            return baseImage
+        }
 
+        // Active states: draw the symbol tinted with the status color so it
+        // stands out against the neutral idle icon.
+        let size = baseImage.size
         let tinted = NSImage(size: size, flipped: false) { rect in
             baseImage.draw(in: rect)
             tintColor.set()
@@ -260,9 +269,11 @@ struct MenuBarIcon: View {
         }
     }
 
-    private var nsColor: NSColor {
+    /// Status tint for the menu bar icon, or `nil` for idle (which renders as a
+    /// theme-adaptive template image instead of a fixed color).
+    private var nsColor: NSColor? {
         switch appStatus {
-        case .idle:       return NSColor(red: 0, green: 0.478, blue: 1.0, alpha: 1.0)
+        case .idle:       return nil
         case .recording:  return .systemRed
         case .processing: return NSColor(red: 0.749, green: 0.353, blue: 0.949, alpha: 1.0) // #BF5AF2
         case .error:      return .systemYellow

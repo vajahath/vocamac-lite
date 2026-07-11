@@ -1,5 +1,5 @@
 // VocaObjCExceptionCatcher.m
-// VocaMac
+// VocaMac Lite
 
 #import "VocaMacObjC.h"
 

@@ -1,5 +1,5 @@
 // SoundManager.swift
-// VocaMac
+// VocaMac Lite
 //
 // Plays audio feedback sounds for recording start/stop events.
 // Uses macOS system sounds for soft, pleasing audio cues.

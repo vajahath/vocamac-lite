@@ -1,5 +1,5 @@
 // RemoteTranscriptionService.swift
-// VocaMac
+// VocaMac Lite
 //
 // Sends recorded audio to a user-configured remote transcription server.
 // Supports OpenAI-compatible endpoints (/v1/audio/transcriptions) and

@@ -1,5 +1,5 @@
 // CursorOverlayManager.swift
-// VocaMac
+// VocaMac Lite
 //
 // Shows a floating mic indicator near the text cursor during recording.
 // Uses the Accessibility API to locate the caret position in the focused app,

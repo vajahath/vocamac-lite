@@ -1,5 +1,5 @@
 // OnboardingView.swift
-// VocaMac
+// VocaMac Lite
 //
 // Multi-step onboarding wizard for first-time users.
 // Guides users through welcome, permissions, endpoint setup, hotkey setup, and testing.
@@ -21,7 +21,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .welcome: return "Welcome to VocaMac"
+        case .welcome: return "Welcome to VocaMac Lite"
         case .permissions: return "Grant Permissions"
         case .endpointSetup: return "Connect Your Server"
         case .hotkeyConfig: return "Configure Hotkey"
@@ -146,7 +146,7 @@ struct OnboardingView: View {
                         .keyboardShortcut(.defaultAction)
                     } else {
                         Button(action: completeOnboarding) {
-                            Text("Start Using VocaMac")
+                            Text("Start Using VocaMac Lite")
                                 .font(.body)
                                 .fontWeight(.medium)
                                 .padding(.horizontal, 20)
@@ -211,7 +211,7 @@ struct WelcomeStep: View {
 
             // App name and tagline
             VStack(spacing: 8) {
-                Text("VocaMac")
+                Text("VocaMac Lite")
                     .font(.system(size: 40, weight: .bold))
 
                 Text("Your voice, your server, your rules")
@@ -232,7 +232,7 @@ struct WelcomeStep: View {
 
             Spacer()
 
-            Text("This guide will set up VocaMac in just a few minutes.")
+            Text("This guide will set up VocaMac Lite in just a few minutes.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -256,7 +256,7 @@ struct PermissionsStep: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("VocaMac needs a few permissions to work properly.")
+            Text("VocaMac Lite needs a few permissions to work properly.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -296,7 +296,7 @@ struct PermissionsStep: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.caption)
                         .foregroundStyle(.yellow)
-                    Text("Some permissions are missing. VocaMac may not work correctly until all permissions are granted. You can set them later in Settings → Debug.")
+                    Text("Some permissions are missing. VocaMac Lite may not work correctly until all permissions are granted. You can set them later in Settings → Debug.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -512,7 +512,7 @@ struct HotkeyConfigStep: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Choose how to activate VocaMac.")
+            Text("Choose how to activate VocaMac Lite.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -552,7 +552,7 @@ struct HotkeyConfigStep: View {
 
                     HotKeySelectionControl(
                         pickerLabel: "Key",
-                        footerText: "VocaMac reserves this key while running."
+                        footerText: "VocaMac Lite reserves this key while running."
                     )
                 }
 
@@ -737,7 +737,7 @@ struct CompleteStep: View {
                     .font(.title)
                     .fontWeight(.bold)
 
-                Text("VocaMac is ready to use")
+                Text("VocaMac Lite is ready to use")
                     .font(.title3)
                     .foregroundStyle(.secondary)
             }
@@ -771,7 +771,7 @@ struct CompleteStep: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Launch at Login")
                             .font(.subheadline)
-                        Text("Start VocaMac automatically when you log in")
+                        Text("Start VocaMac Lite automatically when you log in")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -785,7 +785,7 @@ struct CompleteStep: View {
 
             Spacer()
 
-            Text("You can adjust settings anytime from the VocaMac menu.")
+            Text("You can adjust settings anytime from the VocaMac Lite menu.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

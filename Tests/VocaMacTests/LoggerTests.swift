@@ -1,5 +1,5 @@
 // LoggerTests.swift
-// VocaMac
+// VocaMac Lite
 //
 // Tests for VocaLogger, LogCategory, and LogLevel.
 

@@ -1,5 +1,5 @@
 // UpdateChecker.swift
-// VocaMac
+// VocaMac Lite
 //
 // Checks GitHub Releases for new versions and downloads DMG updates.
 
@@ -169,7 +169,7 @@ final class UpdateChecker: ObservableObject {
     }
 
     func downloadUpdate(_ info: UpdateInfo) async {
-        // Clean up any previously downloaded VocaMac DMGs in temp
+        // Clean up any previously downloaded VocaMac Lite DMGs in temp
         cleanupStaleDMGs()
         updateState = .downloading(progress: 0, bytesDownloaded: 0, totalBytes: Int64(info.dmgSize), estimatedSecondsRemaining: 0)
         VocaLogger.info(.updateChecker, "Starting download: \(info.dmgURL)")
@@ -239,7 +239,7 @@ final class UpdateChecker: ObservableObject {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "GET"
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("VocaMac/\(appVersion)", forHTTPHeaderField: "User-Agent")
+        request.setValue("VocaMac Lite/\(appVersion)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 15
 
         // Send cached ETag so GitHub returns 304 Not Modified (rate-limit free)
@@ -348,7 +348,7 @@ final class UpdateChecker: ObservableObject {
 
     // MARK: - Download with Progress
 
-    /// Remove any leftover VocaMac DMG files from the temp directory.
+    /// Remove any leftover VocaMac Lite DMG files from the temp directory.
     private func cleanupStaleDMGs() {
         let tmpDir = FileManager.default.temporaryDirectory
         if let contents = try? FileManager.default.contentsOfDirectory(at: tmpDir, includingPropertiesForKeys: nil) {

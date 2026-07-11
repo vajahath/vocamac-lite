@@ -1,5 +1,5 @@
 // VocaMacObjC.h
-// VocaMac
+// VocaMac Lite
 //
 // Objective-C helpers used by the Swift app.
 

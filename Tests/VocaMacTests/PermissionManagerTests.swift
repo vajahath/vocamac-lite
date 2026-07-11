@@ -1,5 +1,5 @@
 // PermissionManagerTests.swift
-// VocaMac
+// VocaMac Lite
 //
 // Tests for the PermissionManager service.
 

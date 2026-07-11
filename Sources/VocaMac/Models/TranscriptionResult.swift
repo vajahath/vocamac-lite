@@ -1,7 +1,7 @@
 // TranscriptionResult.swift
-// VocaMac
+// VocaMac Lite
 //
-// Represents the output of a VocaMac transcription.
+// Represents the output of a VocaMac Lite transcription.
 
 import Foundation
 

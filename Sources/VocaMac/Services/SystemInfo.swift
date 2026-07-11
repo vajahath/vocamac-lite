@@ -1,5 +1,5 @@
 // SystemInfo.swift
-// VocaMac
+// VocaMac Lite
 //
 // Detects system hardware capabilities for display in settings.
 

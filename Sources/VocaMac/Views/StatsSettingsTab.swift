@@ -1,5 +1,5 @@
 // StatsSettingsTab.swift
-// VocaMac
+// VocaMac Lite
 //
 // View for displaying user usage statistics.
 

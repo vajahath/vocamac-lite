@@ -1,5 +1,5 @@
 // ObjCExceptionCatcherTests.swift
-// VocaMac
+// VocaMac Lite
 
 import Foundation
 import VocaMacObjC
