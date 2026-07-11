@@ -39,7 +39,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 10.0,
-            modelUsed: .tiny
+            modelUsed: "remote"
         )
 
         statsManager.recordTranscription(transcription)
@@ -56,7 +56,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 30.0, // 0.5 minutes
-            modelUsed: .tiny
+            modelUsed: "remote"
         )
 
         statsManager.recordTranscription(transcription)
@@ -77,7 +77,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: yesterday
         )
         statsManager.recordTranscription(t1)
@@ -89,7 +89,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: today
         )
         statsManager.recordTranscription(t2)
@@ -109,7 +109,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: threeDaysAgo
         )
         statsManager.recordTranscription(t1)
@@ -121,7 +121,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: today
         )
         statsManager.recordTranscription(t2)
@@ -140,7 +140,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: nearMidnightUTC
         )
 
@@ -164,7 +164,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: firstDay
         ))
         statsManager.recordTranscription(VocaTranscription(
@@ -172,7 +172,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: secondDay
         ))
 
@@ -194,7 +194,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: first
         ))
         statsManager.recordTranscription(VocaTranscription(
@@ -202,7 +202,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "en",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny,
+            modelUsed: "remote",
             timestamp: second
         ))
 
@@ -212,7 +212,7 @@ final class StatsManagerTests: XCTestCase {
 
     @MainActor
     func testResetStats() {
-        let transcription = VocaTranscription(text: "Test", duration: 1.0, detectedLanguage: "en", audioLengthSeconds: 1.0, modelUsed: .tiny)
+        let transcription = VocaTranscription(text: "Test", duration: 1.0, detectedLanguage: "en", audioLengthSeconds: 1.0, modelUsed: "remote")
         statsManager.recordTranscription(transcription)
         XCTAssertEqual(statsManager.stats.totalTranscriptions, 1)
 
@@ -229,7 +229,7 @@ final class StatsManagerTests: XCTestCase {
             duration: 1.0,
             detectedLanguage: "ja",
             audioLengthSeconds: 1.0,
-            modelUsed: .tiny
+            modelUsed: "remote"
         )
 
         statsManager.recordTranscription(transcription)
