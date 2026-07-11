@@ -1,15 +1,24 @@
-# Updates the Homebrew tap cask (vajahath/homebrew-vocamac-lite) when a GitHub Release is published.
-# Downloads the release DMG, computes its sha256, and commits the updated version+checksum to the tap repo.
+# Updates the Homebrew tap cask (vajahath/homebrew-vocamac-lite) after a release is published.
+#
+# Triggered via workflow_run (not `release: published`) on purpose: a release
+# created by the Release workflow's built-in GITHUB_TOKEN does NOT trigger
+# `release`-event workflows, so workflow_run is the reliable hook.
+#
 # Requires a HOMEBREW_TAP_TOKEN secret (PAT with write access to the tap repo).
-# If the secret is not set, the job skips cleanly (the cask can be updated manually).
+# If the secret is not set, the job skips cleanly (update the cask manually).
 name: Update Homebrew Cask
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
 
 jobs:
   update-cask:
+    # Only run after a successful, tag-triggered Release build.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Check for tap token
@@ -24,34 +33,28 @@ jobs:
             echo "::warning::HOMEBREW_TAP_TOKEN is not set — skipping automatic cask update. Update the cask manually or add the secret."
           fi
 
-      - name: Checkout main repo
-        if: steps.guard.outputs.has_token == 'true'
-        uses: actions/checkout@v4
-
-      - name: Extract version from release tag
+      - name: Resolve latest release version
         if: steps.guard.outputs.has_token == 'true'
         id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG=$(gh release view --repo "${{ github.repository }}" --json tagName --jq .tagName)
           VERSION="${TAG#v}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "Extracted version: ${VERSION}"
+          echo "Latest release: ${TAG} (version ${VERSION})"
 
-      - name: Download DMG artifact
-        if: steps.guard.outputs.has_token == 'true'
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          DMG_URL="https://github.com/vajahath/vocamac-lite/releases/download/v${VERSION}/VocaMac-${VERSION}-arm64.dmg"
-          curl -sL -o vocamac.dmg "$DMG_URL"
-          echo "Downloaded DMG from ${DMG_URL}"
-
-      - name: Compute DMG sha256
+      - name: Download DMG and compute sha256
         if: steps.guard.outputs.has_token == 'true'
         id: checksum
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DMG_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/VocaMac-${VERSION}-arm64.dmg"
+          curl -fsSL -o vocamac.dmg "$DMG_URL"
           SHA256=$(shasum -a 256 vocamac.dmg | cut -d' ' -f1)
           echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
-          echo "Computed sha256: ${SHA256}"
+          echo "sha256: ${SHA256}"
 
       - name: Checkout tap repo
         if: steps.guard.outputs.has_token == 'true'
@@ -61,28 +64,26 @@ jobs:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           path: homebrew-vocamac-lite
 
-      - name: Update cask file
+      - name: Update and push cask
         if: steps.guard.outputs.has_token == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           SHA256="${{ steps.checksum.outputs.sha256 }}"
           CASK_FILE="homebrew-vocamac-lite/Casks/vocamac-lite.rb"
 
-          # Update the version line
           sed -i "s/^  version \".*\"/  version \"${VERSION}\"/" "$CASK_FILE"
-          # Update the sha256 line
           sed -i "s/^  sha256 \".*\"/  sha256 \"${SHA256}\"/" "$CASK_FILE"
 
           echo "Updated ${CASK_FILE}:"
           grep -E "^\s+(version|sha256)" "$CASK_FILE"
 
-      - name: Commit and push to tap repo
-        if: steps.guard.outputs.has_token == 'true'
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
           cd homebrew-vocamac-lite
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/vocamac-lite.rb
-          git commit -m "chore: update vocamac-lite to v${VERSION}"
-          git push
+          if git diff --quiet; then
+            echo "Cask already up to date; nothing to commit."
+          else
+            git add Casks/vocamac-lite.rb
+            git commit -m "chore: update vocamac-lite to v${VERSION}"
+            git push
+          fi
