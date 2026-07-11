@@ -1,9 +1,8 @@
 cask "vocamac-lite" do
   version "1.0.0"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000" # updated automatically on release
+  sha256 "bc826e5d20ee80c497c0fb455f53b86e4d48ae440afacbb1da5378f4de292e2c"
 
-  url "https://github.com/vajahath/vocamac-lite/releases/download/v#{version}/VocaMac-#{version}-arm64.dmg",
-      verified: "github.com/vajahath/vocamac-lite/"
+  url "https://github.com/vajahath/vocamac-lite/releases/download/v#{version}/VocaMac-#{version}-arm64.dmg"
   name "VocaMac Lite"
   desc "Menu-bar dictation that transcribes on your own remote Whisper server"
   homepage "https://github.com/vajahath/vocamac-lite"
@@ -20,11 +19,10 @@ cask "vocamac-lite" do
   app "VocaMac.app"
 
   caveats <<~EOS
-    VocaMac Lite is not code-signed with an Apple Developer ID.
-    Install with --no-quarantine so macOS lets it launch:
-      brew install --cask vocamac-lite --no-quarantine
-    Or, if already installed:
+    VocaMac Lite is not code-signed with an Apple Developer ID, so macOS
+    quarantines it. Allow it to launch by removing the quarantine flag:
       xattr -dr com.apple.quarantine /Applications/VocaMac.app
+    (or right-click the app in Finder and choose Open).
   EOS
 
   zap trash: [

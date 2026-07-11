@@ -21,20 +21,18 @@ Two server API formats are supported (pick one in Settings → Endpoint):
 
 ## Install
 
-**Homebrew (recommended):** (BETA)
+**Homebrew (recommended):**
 
 ```bash
 brew tap vajahath/vocamac-lite
-brew install --cask vocamac-lite --no-quarantine
+brew trust vajahath/vocamac-lite
+brew install --cask vocamac-lite
+xattr -dr com.apple.quarantine /Applications/VocaMac.app   # allow the unsigned app to launch
 ```
 
-**Manual:** download the DMG from [Releases](https://github.com/vajahath/vocamac-lite/releases), drag VocaMac to Applications, then remove the quarantine flag:
+**Manual:** download the DMG from [Releases](https://github.com/vajahath/vocamac-lite/releases), drag VocaMac to Applications, then run the same `xattr` command (or right-click the app → Open → Open).
 
-```bash
-xattr -dr com.apple.quarantine /Applications/VocaMac.app
-```
-
-> `--no-quarantine` / `xattr` is needed because builds are not signed with an Apple Developer ID (no paid developer account). The source is right here — build it yourself if you prefer.
+> The `xattr` step is needed because builds are not signed with an Apple Developer ID (no paid developer account). The source is right here — build it yourself if you prefer. Already running the original [VocaMac](https://github.com/jatinkrmalik/vocamac)? Uninstall it first (`brew uninstall --cask vocamac`); both apps install to `/Applications/VocaMac.app`.
 
 On first launch, the setup wizard walks you through permissions (Microphone, Accessibility, Input Monitoring), your server endpoint, and the hotkey.
 

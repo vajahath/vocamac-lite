@@ -8,14 +8,12 @@ This directory is the source of truth for the cask. On every published release, 
 
 ```bash
 brew tap vajahath/vocamac-lite
-brew install --cask vocamac-lite --no-quarantine
-```
-
-`--no-quarantine` is required because VocaMac Lite ships unsigned (no Apple Developer ID). Without it, remove the quarantine flag manually:
-
-```bash
+brew trust vajahath/vocamac-lite
+brew install --cask vocamac-lite
 xattr -dr com.apple.quarantine /Applications/VocaMac.app
 ```
+
+The `xattr` step is required because VocaMac Lite ships unsigned (no Apple Developer ID) — it removes the quarantine flag so macOS lets the app launch. You can also right-click the app in Finder and choose Open.
 
 ## Upgrade
 
