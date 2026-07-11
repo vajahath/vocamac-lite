@@ -21,7 +21,7 @@ Two server API formats are supported (pick one in Settings → Endpoint):
 
 ## Install
 
-**Homebrew (recommended):**
+**Homebrew (recommended):** (BETA)
 
 ```bash
 brew tap vajahath/vocamac-lite
