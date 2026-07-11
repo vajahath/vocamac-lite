@@ -151,11 +151,11 @@ final class UpdateCheckerTests: XCTestCase {
         let caskroomRoot = root.appendingPathComponent("Caskroom", isDirectory: true)
         let appBundle = root
             .appendingPathComponent("Applications", isDirectory: true)
-            .appendingPathComponent("VocaMac.app", isDirectory: true)
+            .appendingPathComponent("VocaMac Lite.app", isDirectory: true)
         let caskRoot = caskroomRoot.appendingPathComponent(caskToken, isDirectory: true)
         let metadataRoot = caskRoot.appendingPathComponent(".metadata", isDirectory: true)
         let versionRoot = caskRoot.appendingPathComponent(version, isDirectory: true)
-        let stagedApp = versionRoot.appendingPathComponent("VocaMac.app", isDirectory: true)
+        let stagedApp = versionRoot.appendingPathComponent("VocaMac Lite.app", isDirectory: true)
 
         addTeardownBlock {
             try? fileManager.removeItem(at: root)
@@ -166,7 +166,7 @@ final class UpdateCheckerTests: XCTestCase {
         try fileManager.createDirectory(at: versionRoot, withIntermediateDirectories: true)
         if writeReceipt {
             let receipt = metadataRoot.appendingPathComponent("INSTALL_RECEIPT.json")
-            try Data(#"{"uninstall_artifacts":[{"app":["VocaMac.app"]}]}"#.utf8).write(to: receipt)
+            try Data(#"{"uninstall_artifacts":[{"app":["VocaMac Lite.app"]}]}"#.utf8).write(to: receipt)
         }
         try fileManager.createSymbolicLink(at: stagedApp, withDestinationURL: appBundle)
 

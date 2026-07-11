@@ -21,9 +21,9 @@ show_help() {
     echo "  ./scripts/install.sh --cli    Install CLI commands to ~/.local/bin"
     echo "  ./scripts/install.sh --help   Show this help"
     echo ""
-    echo "Default mode builds VocaMac.app and copies it to /Applications."
+    echo "Default mode builds \"VocaMac Lite.app\" and copies it to /Applications."
     echo "Permissions (Microphone, Accessibility, Input Monitoring) are granted"
-    echo "directly to VocaMac — no terminal permission workarounds needed."
+    echo "directly to VocaMac Lite — no terminal permission workarounds needed."
     echo ""
     echo "CLI mode installs 'vocamac' and 'vocamac-build' shell commands."
     echo "Note: In CLI mode, macOS permissions are granted to your terminal app"
@@ -33,26 +33,28 @@ show_help() {
 # ─── App Install (default) ──────────────────────────────────────────────────────
 
 install_app() {
-    echo "🔨 Building VocaMac.app..."
+    local app_dir="VocaMac Lite.app"
+    echo "🔨 Building ${app_dir}..."
     "$SCRIPT_DIR/build.sh"
     echo ""
 
-    # Kill any running instance
-    pkill -f VocaMac 2>/dev/null || true
+    # Kill any running instance (match our bundle path so we never touch a
+    # separately-installed upstream VocaMac.app)
+    pkill -f "${app_dir}" 2>/dev/null || true
     sleep 1
 
     # Copy to /Applications
     echo "📦 Installing to /Applications..."
-    if [ -d "/Applications/VocaMac.app" ]; then
-        rm -rf "/Applications/VocaMac.app"
+    if [ -d "/Applications/${app_dir}" ]; then
+        rm -rf "/Applications/${app_dir}"
     fi
-    cp -R "$PROJECT_DIR/VocaMac.app" "/Applications/VocaMac.app"
+    cp -R "$PROJECT_DIR/${app_dir}" "/Applications/${app_dir}"
 
-    echo "🚀 Launching VocaMac..."
-    open "/Applications/VocaMac.app"
+    echo "🚀 Launching VocaMac Lite..."
+    open "/Applications/${app_dir}"
 
     echo ""
-    echo "✅ VocaMac installed to /Applications and launched!"
+    echo "✅ VocaMac Lite installed to /Applications and launched!"
     echo ""
     echo "┌─────────────────────────────────────────────────────────────┐"
     echo "│  First-time setup:                                         │"

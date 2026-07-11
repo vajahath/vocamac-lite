@@ -15,7 +15,7 @@
 #                         Set to "-" to force ad-hoc signing.
 #
 # IMPORTANT: After the first build, grant Accessibility and Input Monitoring
-# permissions to VocaMac.app. With Developer ID signing, permissions persist
+# permissions to "VocaMac Lite.app". With Developer ID signing, permissions persist
 # across rebuilds. With ad-hoc signing (no cert), permissions reset on every rebuild.
 
 set -euo pipefail
@@ -26,8 +26,13 @@ cd "$PROJECT_DIR"
 
 CONFIG="${1:-release}"
 BUNDLE_ID="com.vocamac.lite"
+# APP_NAME is the SwiftPM/xcodebuild product and the executable inside the
+# bundle. APP_DISPLAY_NAME is the user-facing product name and the .app bundle
+# directory, deliberately distinct from upstream "VocaMac.app" so both apps can
+# be installed side by side without colliding in /Applications.
 APP_NAME="VocaMac"
-APP_DIR="${APP_NAME}.app"
+APP_DISPLAY_NAME="VocaMac Lite"
+APP_DIR="${APP_DISPLAY_NAME}.app"
 ENTITLEMENTS="VocaMac.entitlements"
 APP_VERSION="${APP_VERSION:-1.0.0}"
 
@@ -52,10 +57,12 @@ else
     echo "🔏 Signing mode: Developer ID"
 fi
 
-# Kill any running VocaMac instances before building
-if pgrep -f "VocaMac" > /dev/null 2>&1; then
-    echo "🛑 Stopping running VocaMac..."
-    pkill -f "VocaMac" 2>/dev/null
+# Kill any running VocaMac Lite instances before building.
+# Match the full bundle path so we never touch a separately-installed
+# upstream VocaMac.app.
+if pgrep -f "${APP_DISPLAY_NAME}.app" > /dev/null 2>&1; then
+    echo "🛑 Stopping running ${APP_DISPLAY_NAME}..."
+    pkill -f "${APP_DISPLAY_NAME}.app" 2>/dev/null
     sleep 1
 fi
 
@@ -67,7 +74,7 @@ echo "🔨 Building VocaMac ($CONFIG)..."
 # Bundle.module accessor that checks Bundle.main.resourceURL (Contents/Resources/)
 # in addition to Bundle.main.bundleURL (the .app root). This is critical for
 # .app bundles where:
-#   - Bundle.main.bundleURL resolves to the .app root (e.g. VocaMac.app/)
+#   - Bundle.main.bundleURL resolves to the .app root (e.g. "VocaMac Lite.app/")
 #   - codesign forbids placing bundles at the .app root
 #   - Bundle.main.resourceURL resolves to Contents/Resources/ which IS allowed
 #
@@ -197,9 +204,9 @@ cat > "${APP_DIR}/Contents/Info.plist" << EOF
     <key>CFBundleIdentifier</key>
     <string>${BUNDLE_ID}</string>
     <key>CFBundleName</key>
-    <string>${APP_NAME}</string>
+    <string>${APP_DISPLAY_NAME}</string>
     <key>CFBundleDisplayName</key>
-    <string>${APP_NAME}</string>
+    <string>${APP_DISPLAY_NAME}</string>
     <key>CFBundleVersion</key>
     <string>${APP_VERSION}</string>
     <key>CFBundleShortVersionString</key>
@@ -257,20 +264,20 @@ echo ""
 codesign -dv "${APP_DIR}" 2>&1 | grep -E "Identifier|CDHash"
 
 echo ""
-echo "🚀 To run:  open ${APP_DIR}"
+echo "🚀 To run:  open \"${APP_DIR}\""
 echo "🔄 To rebuild: ./scripts/build.sh"
 
 if [ "$FIRST_TIME" = true ]; then
     echo ""
     echo "⚠️  FIRST TIME SETUP:"
-    echo "   1. Run: open ${APP_DIR}"
-    echo "   2. System Settings → Privacy & Security → Accessibility → add VocaMac.app → ON"
-    echo "   3. System Settings → Privacy & Security → Input Monitoring → add VocaMac.app → ON"
-    echo "   4. Restart VocaMac: killall VocaMac && open ${APP_DIR}"
+    echo "   1. Run: open \"${APP_DIR}\""
+    echo "   2. System Settings → Privacy & Security → Accessibility → add ${APP_DIR} → ON"
+    echo "   3. System Settings → Privacy & Security → Input Monitoring → add ${APP_DIR} → ON"
+    echo "   4. Restart: pkill -f \"${APP_DISPLAY_NAME}.app\" && open \"${APP_DIR}\""
     if [ "$CODE_SIGN_IDENTITY" = "-" ]; then
         echo ""
         echo "   ⚠️  Permissions reset on every rebuild (ad-hoc signing limitation)."
         echo "   💡 TIP: To avoid this, add your Terminal app to Accessibility & Input Monitoring"
-        echo "      and run the binary directly: ${APP_DIR}/Contents/MacOS/VocaMac"
+        echo "      and run the binary directly: \"${APP_DIR}/Contents/MacOS/${APP_NAME}\""
     fi
 fi

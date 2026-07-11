@@ -12,21 +12,22 @@ cask "vocamac-lite" do
     strategy :github_latest
   end
 
-  conflicts_with cask: "vocamac"
   depends_on arch: :arm64
   depends_on macos: :ventura
 
-  app "VocaMac.app"
+  # Installs as "VocaMac Lite.app" with bundle id com.vocamac.lite, so it
+  # coexists with the upstream "vocamac" cask (VocaMac.app / com.vocamac.app).
+  app "VocaMac Lite.app"
 
   caveats <<~EOS
     VocaMac Lite is not code-signed with an Apple Developer ID, so macOS
     quarantines it. Allow it to launch by removing the quarantine flag:
-      xattr -dr com.apple.quarantine /Applications/VocaMac.app
+      xattr -dr com.apple.quarantine "/Applications/VocaMac Lite.app"
     (or right-click the app in Finder and choose Open).
   EOS
 
   zap trash: [
-    "~/Library/Application Support/VocaMac",
+    "~/Library/Application Support/VocaMac Lite",
     "~/Library/Caches/com.vocamac.lite",
     "~/Library/Preferences/com.vocamac.lite.plist",
     "~/Library/Saved Application State/com.vocamac.lite.savedState",

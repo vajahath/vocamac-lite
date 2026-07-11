@@ -1,4 +1,4 @@
-# VocaMac — Makefile
+# VocaMac Lite — Makefile
 # Run `make help` for available commands.
 
 .PHONY: build install install-cli dmg release test clean reset run help
@@ -21,7 +21,7 @@ install-cli:
 dmg:
 	@./scripts/dist.sh
 
-## Release — tag and push to trigger GitHub Actions release workflow (usage: make release VERSION=0.4.0)
+## Release — tag and push to trigger GitHub Actions release workflow (usage: make release VERSION=1.0.0)
 release:
 	@./scripts/release.sh $(VERSION)
 
@@ -33,16 +33,16 @@ test:
 clean:
 	@echo "🧹 Cleaning build artifacts..."
 	@swift package clean 2>/dev/null || true
-	@rm -rf VocaMac.app
+	@rm -rf "VocaMac Lite.app"
 	@rm -rf .build
 	@rm -rf .xcode-build
 	@rm -rf dist
 	@echo "✅ Clean complete"
 
-## Reset all local VocaMac data (logs, cache, preferences) — app must not be running
+## Reset all local VocaMac Lite data (logs, cache, preferences) — app must not be running
 reset:
-	@if pgrep -x VocaMac > /dev/null 2>&1; then echo "❌ VocaMac is running. Quit it first." && exit 1; fi
-	@echo "⚠️  This will permanently delete all VocaMac local data:"
+	@if pgrep -f "VocaMac Lite.app" > /dev/null 2>&1; then echo "❌ VocaMac Lite is running. Quit it first." && exit 1; fi
+	@echo "⚠️  This will permanently delete all VocaMac Lite local data:"
 	@echo ""
 	@echo "   • Debug logs"
 	@echo "   • Cached data"
@@ -51,18 +51,18 @@ reset:
 	@echo "Next launch will start as if freshly installed (onboarding wizard)."
 	@echo ""
 	@bash -c 'read -p "Are you sure? [y/N] " confirm && [ "$$confirm" = "y" ] || (echo "Aborted." && exit 1)'
-	@rm -rf ~/Library/Application\ Support/VocaMac
-	@rm -rf ~/Library/Caches/com.vocamac.lite
+	@rm -rf "$$HOME/Library/Application Support/VocaMac Lite"
+	@rm -rf "$$HOME/Library/Caches/com.vocamac.lite"
 	@defaults delete com.vocamac.lite 2>/dev/null || true
 	@echo "✅ Reset complete — next launch will start fresh"
 
 ## Launch the locally built .app (build first with `make build`)
 run:
-	@open VocaMac.app 2>/dev/null || (echo "❌ VocaMac.app not found. Run 'make build' first." && exit 1)
+	@open "VocaMac Lite.app" 2>/dev/null || (echo "❌ VocaMac Lite.app not found. Run 'make build' first." && exit 1)
 
 ## Show this help
 help:
-	@echo "VocaMac — Available Commands"
+	@echo "VocaMac Lite — Available Commands"
 	@echo ""
 	@echo "  make build        Build .app bundle (fast, for development)"
 	@echo "  make install      Build + install to /Applications (recommended)"

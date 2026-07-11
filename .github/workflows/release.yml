@@ -52,17 +52,18 @@ jobs:
 
       - name: Verify app bundle
         run: |
+          APP="VocaMac Lite.app"
           # No SPM resource bundle may sit at the .app root (codesign forbids it).
-          if find VocaMac.app -maxdepth 1 -name "*.bundle" | grep -q .; then
+          if find "$APP" -maxdepth 1 -name "*.bundle" | grep -q .; then
             echo "❌ Found .bundle at app root"
             exit 1
           fi
           # The app's own resource bundle must be staged in Contents/Resources.
-          test -d "VocaMac.app/Contents/Resources/VocaMac_VocaMac.bundle" || {
+          test -d "$APP/Contents/Resources/VocaMac_VocaMac.bundle" || {
             echo "❌ VocaMac_VocaMac.bundle missing from Contents/Resources"
             exit 1
           }
-          codesign -dv VocaMac.app
+          codesign -dv "$APP"
           echo "App bundle verified"
 
       - name: Generate checksums
@@ -95,9 +96,11 @@ jobs:
             brew tap vajahath/vocamac-lite
             brew trust vajahath/vocamac-lite
             brew install --cask vocamac-lite
-            xattr -dr com.apple.quarantine /Applications/VocaMac.app
+            xattr -dr com.apple.quarantine "/Applications/VocaMac Lite.app"
             ```
 
-            **Manual:** download the DMG below, drag VocaMac to Applications, then
+            **Manual:** download the DMG below, drag VocaMac Lite to Applications, then
             run the same `xattr` command (this build is not signed with an Apple
             Developer ID), or right-click the app → Open → Open.
+
+            Installs alongside the original VocaMac — no conflict.

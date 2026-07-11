@@ -1,9 +1,9 @@
 #!/bin/bash
-# uninstall.sh — Completely remove VocaMac and all its data
+# uninstall.sh — Completely remove VocaMac Lite and all its data
 #
 # This gives you a clean slate:
-#   - Kills any running VocaMac process
-#   - Removes app data (~/.../Application Support/VocaMac/)
+#   - Kills any running VocaMac Lite process
+#   - Removes app data (~/.../Application Support/VocaMac Lite/)
 #   - Removes launcher scripts (~/.local/bin/vocamac*)
 #   - Removes CoreML compilation cache
 #   - Removes the .app bundle if it exists
@@ -33,13 +33,14 @@ echo "🗑️  VocaMac Uninstaller"
 echo "━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# 1. Kill running process
-echo "→ Stopping VocaMac..."
-pkill -f "VocaMac" 2>/dev/null && echo "  ✓ Process killed" || echo "  · Not running"
+# 1. Kill running process (match our bundle path only — never touch a
+#    side-by-side upstream VocaMac.app)
+echo "→ Stopping VocaMac Lite..."
+pkill -f "VocaMac Lite.app" 2>/dev/null && echo "  ✓ Process killed" || echo "  · Not running"
 sleep 0.5
 
-# 2. Remove Application Support data (logs, caches)
-APP_SUPPORT="$HOME/Library/Application Support/VocaMac"
+# 2. Remove Application Support data (logs, stats)
+APP_SUPPORT="$HOME/Library/Application Support/VocaMac Lite"
 if [ -d "$APP_SUPPORT" ]; then
     # Show what we're deleting
     DATA_SIZE=$(du -sh "$APP_SUPPORT" 2>/dev/null | cut -f1)
@@ -66,7 +67,7 @@ if [ "$REMOVED_SCRIPTS" -eq 0 ]; then
 fi
 
 # 5. Remove .app bundle
-APP_BUNDLE="$PROJECT_DIR/VocaMac.app"
+APP_BUNDLE="$PROJECT_DIR/VocaMac Lite.app"
 if [ -d "$APP_BUNDLE" ]; then
     echo "→ Removing app bundle..."
     rm -rf "$APP_BUNDLE"
@@ -75,8 +76,8 @@ else
     echo "→ No app bundle found"
 fi
 
-# Also check /Applications
-for app_dir in "/Applications/VocaMac.app" "$HOME/Applications/VocaMac.app"; do
+# Also check /Applications (only our "VocaMac Lite.app", never upstream's)
+for app_dir in "/Applications/VocaMac Lite.app" "$HOME/Applications/VocaMac Lite.app"; do
     if [ -d "$app_dir" ]; then
         echo "→ Removing $app_dir..."
         rm -rf "$app_dir" 2>/dev/null && echo "  ✓ Removed" || echo "  ⚠️  Could not remove (try: sudo rm -rf \"$app_dir\")"
@@ -85,8 +86,7 @@ done
 
 # 6. Remove UserDefaults/preferences
 echo "→ Removing preferences..."
-defaults delete com.vocamac.VocaMac 2>/dev/null && echo "  ✓ Preferences cleared" || echo "  · No preferences found"
-defaults delete com.vocamac.lite 2>/dev/null && echo "  ✓ App preferences cleared" || true
+defaults delete com.vocamac.lite 2>/dev/null && echo "  ✓ Preferences cleared" || echo "  · No preferences found"
 
 # 7. Clean build artifacts
 if [ "$KEEP_BUILD" = false ]; then
@@ -103,7 +103,7 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ VocaMac fully uninstalled!"
+echo "✅ VocaMac Lite fully uninstalled!"
 echo ""
 echo "To reinstall:"
 echo "  ./scripts/build.sh && ./scripts/install.sh"

@@ -87,7 +87,7 @@ The project builds on **macOS only** (requires AppKit, AVFoundation). CI runs on
 ## macOS-Specific Considerations
 
 - **LSUIElement:** App runs as a menu bar agent (no dock icon)
-- **Bundle id:** `com.vocamac.lite` (deliberately different from upstream's `com.vocamac.app` so both can coexist)
+- **Side-by-side isolation:** installs as `VocaMac Lite.app` with bundle id `com.vocamac.lite`, and stores data under `~/Library/Application Support/VocaMac Lite` + preferences `com.vocamac.lite`. All deliberately distinct from upstream (`VocaMac.app` / `com.vocamac.app` / `Application Support/VocaMac`) so both apps coexist with zero conflict. The SwiftPM product/executable stays named `VocaMac` (scheme, binary); only the bundle directory + display name are "VocaMac Lite" (see `scripts/build.sh` APP_DISPLAY_NAME).
 - **Code signing:** Builds are ad-hoc signed (no Developer ID). Permissions may reset when the binary changes; the Debug settings tab has a TCC reset button.
 - **ATS:** the generated Info.plist allows arbitrary loads so plain-HTTP LAN endpoints work
 - **MenuBarExtra limitations:** the label only renders `Image`/`Text`; use `NSImage` with `isTemplate = false` for colored menu bar icons

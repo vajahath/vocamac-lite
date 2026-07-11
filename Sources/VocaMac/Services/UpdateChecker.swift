@@ -324,7 +324,7 @@ final class UpdateChecker: ObservableObject {
         )) ?? []
 
         for versionDirectory in versionDirectories {
-            let stagedApp = versionDirectory.appendingPathComponent("VocaMac.app", isDirectory: true)
+            let stagedApp = versionDirectory.appendingPathComponent("VocaMac Lite.app", isDirectory: true)
             guard fileManager.fileExists(atPath: stagedApp.path) else { continue }
 
             let stagedPath = normalizedPath(stagedApp.path)

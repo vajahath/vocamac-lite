@@ -3,7 +3,7 @@
 # Usage: ./scripts/dist.sh [--skip-notarize] [--skip-sign]
 #
 # This script:
-# 1. Builds VocaMac.app via build.sh
+# 1. Builds "VocaMac Lite.app" via build.sh
 # 2. Creates a DMG with a branded background, app icon, and Applications symlink
 # 3. Optionally signs and notarizes when a Developer ID certificate is present
 #
@@ -44,6 +44,10 @@ if [ -z "$VERSION" ]; then
 fi
 ARCH=$(uname -m)
 APP_NAME="VocaMac"
+APP_DIR="VocaMac Lite.app"
+VOLNAME="VocaMac Lite"
+# DMG download filename keeps the short "VocaMac" prefix (matches the cask URL
+# and release asset name); the app bundle inside is "VocaMac Lite.app".
 DMG_NAME="${APP_NAME}-${VERSION}-${ARCH}.dmg"
 DIST_DIR="dist"
 STAGING_DIR="${DIST_DIR}/.staging"
@@ -55,11 +59,11 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # ── Step 1: Build ────────────────────────────────────────────────────────────
-echo "▶ Step 1/5: Building VocaMac..."
+echo "▶ Step 1/5: Building VocaMac Lite..."
 "$SCRIPT_DIR/build.sh" release
 
-if [ ! -d "VocaMac.app" ]; then
-    echo "❌ VocaMac.app not found. Build failed."
+if [ ! -d "$APP_DIR" ]; then
+    echo "❌ $APP_DIR not found. Build failed."
     exit 1
 fi
 
@@ -77,7 +81,7 @@ mkdir -p "$STAGING_DIR"
 mkdir -p "$DIST_DIR"
 
 # Copy app
-cp -R VocaMac.app "$STAGING_DIR/"
+cp -R "$APP_DIR" "$STAGING_DIR/"
 
 # Applications symlink
 ln -sf /Applications "$STAGING_DIR/Applications"
@@ -100,15 +104,18 @@ echo "▶ Step 3/5: Creating DMG..."
 
 # Create a writable DMG first so we can set Finder view options
 TEMP_DMG="${DIST_DIR}/.tmp-rw.dmg"
-hdiutil create -volname "VocaMac" \
+hdiutil create -volname "$VOLNAME" \
     -srcfolder "$STAGING_DIR" \
     -ov -format UDRW \
     -size 500m \
     "$TEMP_DMG" > /dev/null
 
-# Mount it
+# Mount it. hdiutil prints tab-separated columns; the mount path is the last
+# field. Split on tab and take $NF so a volume name with spaces (e.g.
+# "VocaMac Lite") is captured intact, then trim any trailing whitespace.
 MOUNT_POINT=$(hdiutil attach "$TEMP_DMG" -readwrite -noverify -noautoopen \
-    | grep -E '\s/Volumes/' | sed 's|.*\(/Volumes/[^\t]*\)|\1|' | tail -1 | xargs)
+    | awk -F'\t' '/\/Volumes\//{mp=$NF} END{print mp}' \
+    | sed 's/[[:space:]]*$//')
 
 if [ -z "$MOUNT_POINT" ]; then
     echo "❌ Failed to mount DMG."
@@ -132,7 +139,7 @@ sleep 2
 
 osascript << 'APPLESCRIPT'
 tell application "Finder"
-    tell disk "VocaMac"
+    tell disk "VocaMac Lite"
         open
         delay 1
         set current view of container window to icon view
@@ -143,7 +150,7 @@ tell application "Finder"
         set arrangement of viewOptions to not arranged
         set icon size of viewOptions to 120
         set background picture of viewOptions to file ".background:background.png"
-        set position of item "VocaMac.app" of container window to {170, 250}
+        set position of item "VocaMac Lite.app" of container window to {170, 250}
         set position of item "Applications" of container window to {490, 250}
         close
         open
@@ -157,7 +164,7 @@ tell application "Finder"
         set arrangement of viewOptions to not arranged
         set icon size of viewOptions to 120
         set background picture of viewOptions to file ".background:background.png"
-        set position of item "VocaMac.app" of container window to {170, 250}
+        set position of item "VocaMac Lite.app" of container window to {170, 250}
         set position of item "Applications" of container window to {490, 250}
         update without registering applications
         delay 3

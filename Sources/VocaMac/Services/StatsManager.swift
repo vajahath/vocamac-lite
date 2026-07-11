@@ -27,7 +27,9 @@ class StatsManager: StatsManaging, ObservableObject {
         } else {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
                 ?? FileManager.default.temporaryDirectory
-            let vMacDir = appSupport.appendingPathComponent("VocaMac", isDirectory: true)
+            // "VocaMac Lite" (not "VocaMac") so stats stay separate from a
+            // side-by-side install of the upstream VocaMac app.
+            let vMacDir = appSupport.appendingPathComponent("VocaMac Lite", isDirectory: true)
 
             // Ensure directory exists
             if !FileManager.default.fileExists(atPath: vMacDir.path) {

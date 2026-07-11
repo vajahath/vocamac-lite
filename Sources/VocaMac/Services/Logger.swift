@@ -59,7 +59,9 @@ final class VocaLogger {
 
     private init() {
         let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        self.logDirectory = appSupportURL.appendingPathComponent("VocaMac/logs", isDirectory: true)
+        // Use a "VocaMac Lite" subdirectory (not "VocaMac") so data never mixes
+        // with a side-by-side install of the upstream VocaMac app.
+        self.logDirectory = appSupportURL.appendingPathComponent("VocaMac Lite/logs", isDirectory: true)
         self.logFileURL = logDirectory.appendingPathComponent("vocamac.log")
         self.osLogger = os.Logger(subsystem: "com.vocamac", category: "general")
 
