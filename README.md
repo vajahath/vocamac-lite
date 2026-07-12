@@ -38,7 +38,23 @@ On first launch, the setup wizard walks you through permissions (Microphone, Acc
 
 ## Set up a transcription server
 
-Run one of these on the machine that hosts your models:
+Run one of these on the machine that hosts your models.
+
+### [whisper-stt-server](https://github.com/vajahath/whisper-stt-server) — recommended for Windows + NVIDIA GPU
+
+A companion project built for VocaMac Lite: a ready-to-run, GPU-accelerated Whisper server (faster-whisper large-v3) for Windows machines with an NVIDIA GPU. No Docker required — just PowerShell.
+
+```powershell
+git clone https://github.com/vajahath/whisper-stt-server.git
+cd whisper-stt-server
+.\start_server.ps1
+```
+
+The script sets up its own Python environment, downloads the model on first run, opens the Windows Firewall port, and prints the LAN URL to paste into VocaMac Lite. See [its README](https://github.com/vajahath/whisper-stt-server) for GPU/CUDA prerequisites and troubleshooting.
+
+→ Format: *OpenAI-compatible*, URL: `http://<server-ip>:8000`, Model: `Systran/faster-whisper-large-v3`
+
+### Other options
 
 **Speaches (faster-whisper, Docker):**
 
