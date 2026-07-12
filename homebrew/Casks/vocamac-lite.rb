@@ -4,7 +4,7 @@ cask "vocamac-lite" do
 
   url "https://github.com/vajahath/vocamac-lite/releases/download/v#{version}/VocaMac-#{version}-arm64.dmg"
   name "VocaMac Lite"
-  desc "Menu-bar dictation powered by a remote speech-to-text server you choose"
+  desc "macOS dictation that does one thing: record your voice and send it to the speech-to-text server you choose — offload transcription to a GPU box and keep your Mac light. An efficiency-focused, sub-5 MB fork of VocaMac."
   homepage "https://github.com/vajahath/vocamac-lite"
 
   livecheck do
