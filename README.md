@@ -1,5 +1,11 @@
 # VocaMac Lite
 
+[![CI](https://github.com/vajahath/vocamac-lite/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/vajahath/vocamac-lite/actions/workflows/ci.yml)
+[![Release](https://github.com/vajahath/vocamac-lite/actions/workflows/release.yml/badge.svg)](https://github.com/vajahath/vocamac-lite/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/vajahath/vocamac-lite?sort=semver&label=latest)](https://github.com/vajahath/vocamac-lite/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/vajahath/vocamac-lite/total?label=downloads)](https://github.com/vajahath/vocamac-lite/releases)
+[![License: AGPL-3.0](https://img.shields.io/github/license/vajahath/vocamac-lite)](LICENSE)
+
 **Hold a key, speak, and it types — anywhere on your Mac. Your voice is transcribed by a Whisper server *you* run, never the cloud.**
 
 An **efficiency-focused fork** of [VocaMac](https://github.com/jatinkrmalik/vocamac) by Jatin Kumar Malik. Huge thanks to the original project — the app, the audio pipeline, and the UX all come from upstream, and this fork simply stands on its shoulders. Where VocaMac runs a Whisper model locally, VocaMac Lite moves all transcription to a remote server so the Mac app itself stays lean.
