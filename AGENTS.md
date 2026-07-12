@@ -7,7 +7,7 @@ VocaMac Lite is a **native macOS menu bar application** for voice-to-text dictat
 - **License:** AGPL-3.0
 - **Minimum target:** macOS 13 (Ventura)
 - **Build system:** Swift Package Manager (no external dependencies)
-- **CI:** GitHub Actions (`.github/workflows/ci.yml`); releases build an unsigned DMG (`release.yml`)
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`); releases build a DMG signed with a stable self-signed identity (`release.yml`)
 
 ---
 
@@ -88,7 +88,7 @@ The project builds on **macOS only** (requires AppKit, AVFoundation). CI runs on
 
 - **LSUIElement:** App runs as a menu bar agent (no dock icon)
 - **Side-by-side isolation:** installs as `VocaMac Lite.app` with bundle id `com.vocamac.lite`, and stores data under `~/Library/Application Support/VocaMac Lite` + preferences `com.vocamac.lite`. All deliberately distinct from upstream (`VocaMac.app` / `com.vocamac.app` / `Application Support/VocaMac`) so both apps coexist with zero conflict. The SwiftPM product/executable stays named `VocaMac` (scheme, binary); only the bundle directory + display name are "VocaMac Lite" (see `scripts/build.sh` APP_DISPLAY_NAME).
-- **Code signing:** Builds are ad-hoc signed (no Developer ID). Permissions may reset when the binary changes; the Debug settings tab has a TCC reset button.
+- **Code signing:** Release builds (via CI) are signed with a stable, reused self-signed certificate (`MACOS_CERTIFICATE_P12_BASE64`/`_PASSWORD`/`MACOS_SIGN_IDENTITY` secrets) — not an Apple Developer ID, so Gatekeeper still quarantines the app, but the constant Designated Requirement means TCC keeps Accessibility/Input Monitoring grants across updates. Local dev builds (no cert in your keychain) fall back to ad-hoc, where permissions do reset on every rebuild. The Debug settings tab has a TCC reset button either way.
 - **ATS:** the generated Info.plist allows arbitrary loads so plain-HTTP LAN endpoints work
 - **MenuBarExtra limitations:** the label only renders `Image`/`Text`; use `NSImage` with `isTemplate = false` for colored menu bar icons
 
@@ -97,5 +97,5 @@ The project builds on **macOS only** (requires AppKit, AVFoundation). CI runs on
 ## Release Flow
 
 1. `make release VERSION=x.y.z` tags and pushes `vx.y.z`
-2. `release.yml` runs tests, builds an unsigned DMG via `./scripts/dist.sh --skip-sign`, uploads it as an artifact, and publishes a GitHub Release
+2. `release.yml` runs tests, imports the stable self-signed identity and builds the DMG via `./scripts/dist.sh --skip-notarize` (or `--skip-sign` if the cert secret is unset), uploads it as an artifact, and publishes a GitHub Release
 3. `update-homebrew-cask.yml` updates `Casks/vocamac-lite.rb` in the `vajahath/homebrew-vocamac-lite` tap (requires `HOMEBREW_TAP_TOKEN` secret)

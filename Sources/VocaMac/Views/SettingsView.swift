@@ -811,7 +811,7 @@ struct DebugTab: View {
                     Image(systemName: "info.circle.fill")
                         .foregroundStyle(.blue)
                         .font(.caption)
-                    Text("**Upgrading?** VocaMac Lite ships unsigned (ad-hoc) builds, so macOS may forget permission grants after an update. If permissions appear stuck, use the Reset button above and re-grant on next launch.")
+                    Text("**Upgrading?** Official releases are signed with a stable identity, so permission grants should survive updates. If you're running a locally built (ad-hoc signed) copy, macOS may forget permissions on every rebuild — use the Reset button above and re-grant on next launch.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

@@ -68,7 +68,7 @@ help:
 	@echo "  make install      Build + install to /Applications (recommended)"
 	@echo "  make install-cli  Install CLI commands to ~/.local/bin"
 	@echo "  make dmg          Build DMG for distribution (output in dist/)"
-	@echo "  make release VERSION=X.Y.Z  Tag and release (CI builds unsigned DMG + GitHub Release)"
+	@echo "  make release VERSION=X.Y.Z  Tag and release (CI builds signed DMG + GitHub Release)"
 	@echo "  make test         Run tests"
 	@echo "  make run          Launch the locally built .app"
 	@echo "  make clean        Remove build artifacts"

@@ -8,7 +8,8 @@
 # 2. Creates a git tag (v<version>)
 # 3. Pushes the tag to origin, which triggers .github/workflows/release.yml
 #
-# The release workflow handles: build → package unsigned DMG → create GitHub Release
+# The release workflow handles: build → sign with the stable self-signed identity
+# → package DMG → create GitHub Release
 
 set -euo pipefail
 
@@ -51,7 +52,7 @@ git push origin "${TAG}"
 echo ""
 echo "✅ Release ${TAG} triggered!"
 echo ""
-echo "   GitHub Actions will build an unsigned DMG and publish a GitHub Release."
+echo "   GitHub Actions will build a signed DMG and publish a GitHub Release."
 echo "   Watch progress: https://github.com/vajahath/vocamac-lite/actions"
 echo ""
 echo "   Once complete, review and publish the draft release on GitHub."

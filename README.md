@@ -40,7 +40,7 @@ Two server API formats are supported (pick one in Settings → Endpoint):
 brew tap vajahath/vocamac-lite
 brew trust vajahath/vocamac-lite
 brew install --cask vocamac-lite
-xattr -dr com.apple.quarantine "/Applications/VocaMac Lite.app"   # allow the unsigned app to launch
+xattr -dr com.apple.quarantine "/Applications/VocaMac Lite.app"   # allow the non-notarized app to launch
 ```
 
 **Manual:** download the DMG from [Releases](https://github.com/vajahath/vocamac-lite/releases), drag VocaMac Lite to Applications, then run the same `xattr` command (or right-click the app → Open → Open).
@@ -103,7 +103,7 @@ make test      # run the test suite
 make release VERSION=x.y.z
 ```
 
-This tags `vx.y.z` and pushes; GitHub Actions then runs the tests, builds an unsigned DMG (`release.yml`), publishes a GitHub Release, and updates the Homebrew tap (`update-homebrew-cask.yml`, requires the `HOMEBREW_TAP_TOKEN` secret and the `vajahath/homebrew-vocamac-lite` tap repo — see [homebrew/README.md](homebrew/README.md)). The DMG is also downloadable as a workflow artifact from the Actions run.
+This tags `vx.y.z` and pushes; GitHub Actions then runs the tests, builds the DMG signed with the project's stable self-signed identity (`release.yml`; falls back to an unsigned/ad-hoc build if the `MACOS_CERTIFICATE_P12_BASE64` secret is absent), publishes a GitHub Release, and updates the Homebrew tap (`update-homebrew-cask.yml`, requires the `HOMEBREW_TAP_TOKEN` secret and the `vajahath/homebrew-vocamac-lite` tap repo — see [homebrew/README.md](homebrew/README.md)). The DMG is also downloadable as a workflow artifact from the Actions run.
 
 ## License
 
