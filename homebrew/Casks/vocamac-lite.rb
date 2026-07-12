@@ -4,7 +4,7 @@ cask "vocamac-lite" do
 
   url "https://github.com/vajahath/vocamac-lite/releases/download/v#{version}/VocaMac-#{version}-arm64.dmg"
   name "VocaMac Lite"
-  desc "Menu-bar dictation that transcribes on your own remote Whisper server"
+  desc "Menu-bar dictation powered by a remote speech-to-text server you choose"
   homepage "https://github.com/vajahath/vocamac-lite"
 
   livecheck do
