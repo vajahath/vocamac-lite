@@ -31,6 +31,7 @@ Package.resolved
 
 # Built app bundle
 VocaMac.app/
+VocaMac Lite.app/
 
 # Distribution artifacts
 dist/

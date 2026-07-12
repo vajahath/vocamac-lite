@@ -11,39 +11,54 @@ extension Notification.Name {
 }
 
 struct SettingsView: View {
+    /// The settings sections, listed in the sidebar (System Settings style).
+    enum Section: String, CaseIterable, Identifiable {
+        case general = "General"
+        case endpoint = "Endpoint"
+        case stats = "Stats"
+        case audio = "Audio"
+        case debug = "Debug"
+        case about = "About"
+
+        var id: String { rawValue }
+    }
+
+    @State private var selection: Section = .general
+
+    // A plain sidebar + detail split. We deliberately avoid NavigationSplitView:
+    // it expects to own the window's toolbar and column-visibility state, which
+    // breaks when hosted inside a hand-managed NSWindow/NSHostingView (stray
+    // collapse button, jumping dividers, corrupted layout on selection/resize).
+    // A self-contained HStack has no toolbar integration and stays stable.
     var body: some View {
-        TabView {
-            GeneralSettingsTab()
-                .tabItem {
-                    Label("General", systemImage: "gear")
+        HStack(spacing: 0) {
+            List(selection: $selection) {
+                ForEach(Section.allCases) { section in
+                    Text(section.rawValue)
+                        .tag(section)
                 }
+            }
+            .listStyle(.sidebar)
+            .frame(width: 180)
 
-            EndpointSettingsTab()
-                .tabItem {
-                    Label("Endpoint", systemImage: "network")
-                }
+            Divider()
 
-            StatsSettingsTab()
-                .tabItem {
-                    Label("Stats", systemImage: "chart.xyaxis.line")
-                }
-
-            AudioSettingsTab()
-                .tabItem {
-                    Label("Audio", systemImage: "waveform")
-                }
-
-            DebugTab()
-                .tabItem {
-                    Label("Debug", systemImage: "ladybug")
-                }
-
-            AboutTab()
-                .tabItem {
-                    Label("About", systemImage: "info.circle")
-                }
+            detail(for: selection)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 560, height: 520)
+        .frame(minWidth: 700, minHeight: 460)
+    }
+
+    @ViewBuilder
+    private func detail(for section: Section) -> some View {
+        switch section {
+        case .general:  GeneralSettingsTab()
+        case .endpoint: EndpointSettingsTab()
+        case .stats:    StatsSettingsTab()
+        case .audio:    AudioSettingsTab()
+        case .debug:    DebugTab()
+        case .about:    AboutTab()
+        }
     }
 }
 

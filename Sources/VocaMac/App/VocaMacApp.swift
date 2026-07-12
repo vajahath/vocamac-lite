@@ -22,14 +22,16 @@ final class SettingsWindowManager: ObservableObject {
         let settingsView = SettingsView()
             .environmentObject(appState)
 
-        // Create a new window
+        // Create a new window. Resizable so the sidebar/detail split can breathe,
+        // sized to comfortably fit the System-Settings-style layout.
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 480),
-            styleMask: [.titled, .closable, .miniaturizable],
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.title = "VocaMac Lite Settings"
+        window.contentMinSize = NSSize(width: 700, height: 460)
         window.contentView = NSHostingView(rootView: settingsView)
         window.center()
         window.isReleasedWhenClosed = false
@@ -155,7 +157,7 @@ struct VocaMacApp: App {
                     appState.triggerStartupIfNeeded()
                 }
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
     }
 
     @MainActor init() {
