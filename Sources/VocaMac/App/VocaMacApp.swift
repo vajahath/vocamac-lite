@@ -155,7 +155,7 @@ struct VocaMacApp: App {
                     appState.triggerStartupIfNeeded()
                 }
         }
-        .menuBarExtraStyle(.window)
+        .menuBarExtraStyle(.menu)
     }
 
     @MainActor init() {
