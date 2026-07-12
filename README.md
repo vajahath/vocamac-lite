@@ -1,6 +1,6 @@
 # VocaMac Lite
 
-**Menu-bar dictation for macOS that transcribes on *your own* server.**
+**Hold a key, speak, and it types — anywhere on your Mac. Your voice is transcribed by a Whisper server *you* run, never the cloud.**
 
 An **efficiency-focused fork** of [VocaMac](https://github.com/jatinkrmalik/vocamac) by Jatin Kumar Malik. Huge thanks to the original project — the app, the audio pipeline, and the UX all come from upstream, and this fork simply stands on its shoulders. Where VocaMac runs a Whisper model locally, VocaMac Lite moves all transcription to a remote server so the Mac app itself stays lean.
 
