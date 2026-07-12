@@ -2,9 +2,16 @@
 
 **Menu-bar dictation for macOS that transcribes on *your own* server.**
 
-Hold a hotkey, speak, and your words are typed wherever your cursor is. Audio is recorded locally (16 kHz mono WAV) and sent to a Whisper server you run — on your LAN box, homelab, or any OpenAI-compatible API. Nothing is transcribed on the Mac itself, so the app stays tiny: no local AI model, no gigabytes of RAM, safe to keep running from login.
+An **efficiency-focused fork** of [VocaMac](https://github.com/jatinkrmalik/vocamac) by Jatin Kumar Malik. Huge thanks to the original project — the app, the audio pipeline, and the UX all come from upstream, and this fork simply stands on its shoulders. Where VocaMac runs a Whisper model locally, VocaMac Lite moves all transcription to a remote server so the Mac app itself stays lean.
 
-A lean fork of [VocaMac](https://github.com/jatinkrmalik/vocamac) by Jatin Kumar Malik (AGPL-3.0). The upstream app runs WhisperKit locally; this fork replaces the local engine with a remote endpoint and strips everything else.
+Hold a hotkey, speak, and your words are typed wherever your cursor is. Audio is recorded locally (16 kHz mono WAV) and sent to a Whisper server you run — on your LAN box, homelab, or any OpenAI-compatible API. Nothing is transcribed on the Mac itself: no local AI model, no gigabytes of RAM, safe to keep running from login.
+
+<p align="center"><img src="demo.png" alt="VocaMac Lite menu bar popover" width="420"></p>
+
+## Features
+
+- **Remote-only transcription** — the app has a single job: record audio and send it to a Whisper server you control. There's no bundled AI model, so your server does the heavy lifting and the Mac app stays lightweight.
+- **Tiny download** — the DMG is under 5 MB (~2.8 MB).
 
 ## How it works
 
@@ -38,11 +45,11 @@ On first launch, the setup wizard walks you through permissions (Microphone, Acc
 
 ## Set up a transcription server
 
-Run one of these on the machine that hosts your models.
+VocaMac Lite needs a Whisper server to talk to. The companion project below is the engine it's built around.
 
-### [whisper-stt-server](https://github.com/vajahath/whisper-stt-server) — recommended for Windows + NVIDIA GPU
+### [whisper-stt-server](https://github.com/vajahath/whisper-stt-server) — the recommended engine
 
-A companion project built for VocaMac Lite: a ready-to-run, GPU-accelerated Whisper server (faster-whisper large-v3) for Windows machines with an NVIDIA GPU. No Docker required — just PowerShell.
+A companion project built specifically for VocaMac Lite: a ready-to-run, GPU-accelerated Whisper server (faster-whisper large-v3) for Windows machines with an NVIDIA GPU. No Docker — just PowerShell.
 
 ```powershell
 git clone https://github.com/vajahath/whisper-stt-server.git
@@ -54,26 +61,9 @@ The script sets up its own Python environment, downloads the model on first run,
 
 → Format: *OpenAI-compatible*, URL: `http://<server-ip>:8000`, Model: `Systran/faster-whisper-large-v3`
 
-### Other options
+### Other servers
 
-**Speaches (faster-whisper, Docker):**
-
-```bash
-docker run --publish 8000:8000 --volume speaches-cache:/home/ubuntu/.cache \
-  ghcr.io/speaches-ai/speaches:latest-cpu   # or :latest-cuda for GPU
-```
-
-→ Format: *OpenAI-compatible*, URL: `http://<server-ip>:8000`, Model: e.g. `Systran/faster-whisper-small`
-
-**whisper.cpp server:**
-
-```bash
-./build/bin/whisper-server -m models/ggml-base.en.bin --host 0.0.0.0 --port 8080
-```
-
-→ Format: *whisper.cpp server*, URL: `http://<server-ip>:8080`
-
-**OpenAI's hosted API** also works (URL `https://api.openai.com`, your API key, model `whisper-1`) — but then your audio leaves your network; that's the tradeoff.
+Any OpenAI-compatible (`POST /v1/audio/transcriptions`) or whisper.cpp (`POST /inference`) server works too — for example Speaches, faster-whisper-server, LocalAI, whisper.cpp's bundled `whisper-server`, or OpenAI's hosted API. Point VocaMac Lite at it in **Settings → Endpoint** and pick the matching format. (With OpenAI's hosted API your audio leaves your network — that's the tradeoff.)
 
 Use the **Test Connection** button in Settings → Endpoint (or the setup wizard) to verify — it sends a short silent clip through the real transcription path.
 
@@ -88,7 +78,7 @@ Use the **Test Connection** button in Settings → Endpoint (or the setup wizard
 ## Security notes
 
 - The API key is stored **unencrypted** in app preferences (`~/Library/Preferences/com.vocamac.lite.plist`). Plain HTTP is fine on a trusted LAN; use HTTPS + an API key for anything beyond it.
-- Because builds are ad-hoc signed, macOS may forget permission grants after an update — the Debug tab has a "Reset All Permissions" button if they get stuck.
+- Releases are signed with a stable self-signed certificate, so macOS keeps your Accessibility and Input Monitoring grants across updates. (The Debug tab has a permission reset if anything ever gets stuck.)
 
 ## Build from source
 
