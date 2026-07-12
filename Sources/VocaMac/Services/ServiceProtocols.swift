@@ -85,6 +85,9 @@ protocol PermissionManaging: AnyObject {
 
 protocol SpeechTranscribing: AnyObject {
     func transcribe(audioData: [Float], language: String?, translate: Bool, vocabulary: String) async throws -> VocaTranscription
+    /// Cheap liveness probe (GET /health) for the automatic status check.
+    func checkHealth() async throws -> String
+    /// Thorough validation (uploads a silent clip) for the explicit Test Connection action.
     func testConnection() async throws -> String
 }
 

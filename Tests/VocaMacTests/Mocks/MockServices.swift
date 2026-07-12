@@ -225,6 +225,9 @@ final class MockTranscriptionService: SpeechTranscribing {
     var testConnectionCallCount = 0
     var testConnectionResult: Result<String, Error> = .success("Connected · 0.1s")
 
+    var checkHealthCallCount = 0
+    var checkHealthResult: Result<String, Error> = .success("Online · 0.02s")
+
     func transcribe(audioData: [Float], language: String?, translate: Bool, vocabulary: String) async throws -> VocaTranscription {
         lastTranscribedAudioData = audioData
         lastLanguage = language
@@ -239,6 +242,11 @@ final class MockTranscriptionService: SpeechTranscribing {
     func testConnection() async throws -> String {
         testConnectionCallCount += 1
         return try testConnectionResult.get()
+    }
+
+    func checkHealth() async throws -> String {
+        checkHealthCallCount += 1
+        return try checkHealthResult.get()
     }
 }
 

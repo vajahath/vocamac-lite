@@ -339,10 +339,15 @@ final class AudioEngine {
     }
 
     /// Returns captured samples and clears the backing buffer.
+    ///
+    /// Releases the buffer's capacity (rather than keeping it) so a long clip's
+    /// allocation — up to ~3.8 MB for a 60s recording — is handed back to the
+    /// allocator once transcription has the copy, instead of sitting idle until
+    /// the next recording. The next capture reallocates as it fills.
     private func capturedSamplesAndResetBuffer() -> [Float] {
         bufferQueue.sync {
             let copy = audioBuffer
-            audioBuffer.removeAll(keepingCapacity: true)
+            audioBuffer = []
             return copy
         }
     }

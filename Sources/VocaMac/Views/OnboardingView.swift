@@ -456,7 +456,7 @@ struct EndpointSetupStep: View {
                 HStack {
                     Button("Test Connection") {
                         Task { @MainActor in
-                            await appState.checkEndpointReachability()
+                            await appState.testEndpointConnection()
                         }
                     }
                     .disabled(!isConfigured || appState.endpointStatus == .checking)

@@ -295,7 +295,7 @@ struct EndpointSettingsTab: View {
                 HStack {
                     Button("Test Connection") {
                         Task { @MainActor in
-                            await appState.checkEndpointReachability()
+                            await appState.testEndpointConnection()
                         }
                     }
                     .disabled(appState.remoteEndpointURL.trimmingCharacters(in: .whitespaces).isEmpty

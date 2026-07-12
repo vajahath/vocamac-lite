@@ -259,6 +259,44 @@ final class RemoteTranscriptionService: @unchecked Sendable {
         return String(format: "Connected · %.1fs", elapsed)
     }
 
+    /// Lightweight liveness probe: a `GET {base}/health`. Any HTTP response —
+    /// even 404 or 401 — proves the server is up and reachable at the configured
+    /// host:port; only a transport failure (connection refused, timeout, DNS)
+    /// counts as unreachable. Far cheaper than `testConnection()`, which encodes
+    /// and uploads a full WAV through the transcription path, so this is what the
+    /// automatic/background status check uses.
+    func checkHealth() async throws -> String {
+        let config = configProvider()
+        guard config.isConfigured else {
+            throw RemoteTranscriptionError.notConfigured
+        }
+        let base = config.normalizedBaseURL
+        guard let url = URL(string: base + "/health"), url.scheme != nil, url.host != nil else {
+            throw RemoteTranscriptionError.invalidURL(base)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        // Liveness should fail fast — no reason to wait the full 30s upload budget.
+        request.timeoutInterval = 5
+        let apiKey = config.apiKey.trimmingCharacters(in: .whitespaces)
+        if !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+        do {
+            let (_, response) = try await session.data(for: request)
+            guard response is HTTPURLResponse else {
+                throw RemoteTranscriptionError.invalidResponse
+            }
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            return String(format: "Online · %.2fs", elapsed)
+        } catch let error as URLError {
+            throw RemoteTranscriptionError.network(error)
+        }
+    }
+
     // MARK: - Hallucination Filtering
 
     /// Tokens Whisper models may emit for silence, noise, or very short audio.

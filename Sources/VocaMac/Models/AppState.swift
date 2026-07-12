@@ -378,17 +378,30 @@ final class AppState: ObservableObject {
 
     // MARK: - Endpoint Reachability
 
-    /// Probe the configured remote endpoint by sending a short silent clip
-    /// through the real transcription request path. Non-blocking callers
-    /// should wrap this in a Task.
+    /// Automatic/background reachability check: a cheap `GET /health` liveness
+    /// probe. Used at startup and wherever the status just needs to reflect
+    /// whether the server is up. Non-blocking callers should wrap this in a Task.
     func checkEndpointReachability() async {
+        await probeEndpoint { try await self.transcriptionService.checkHealth() }
+    }
+
+    /// Explicit "Test Connection" action: sends a short silent clip through the
+    /// real transcription path to validate URL, format, auth, and multipart
+    /// handling — more thorough (and costlier) than the liveness check.
+    func testEndpointConnection() async {
+        await probeEndpoint { try await self.transcriptionService.testConnection() }
+    }
+
+    /// Shared driver for both endpoint checks: guards on configuration, flips to
+    /// `.checking`, then records the reachable/unreachable outcome.
+    private func probeEndpoint(_ probe: () async throws -> String) async {
         guard !remoteEndpointURL.trimmingCharacters(in: .whitespaces).isEmpty else {
             endpointStatus = .unconfigured
             return
         }
         endpointStatus = .checking
         do {
-            let summary = try await transcriptionService.testConnection()
+            let summary = try await probe()
             endpointStatus = .reachable(summary)
             VocaLogger.info(.appState, "Endpoint reachable: \(summary)")
         } catch {
