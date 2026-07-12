@@ -1,45 +1,9 @@
 // UpdateView.swift
 // VocaMac Lite
 //
-// Update banner and detail sheet for GitHub release updates.
+// Update detail sheet for GitHub release updates (reached from Settings → About).
 
 import SwiftUI
-
-struct UpdateBannerView: View {
-    let info: UpdateInfo
-    @EnvironmentObject var appState: AppState
-    @State private var showingDetails = false
-
-    var body: some View {
-        Button {
-            showingDetails = true
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "arrow.down.circle.fill")
-                    .foregroundStyle(.blue)
-                Text("Update \(info.tagName) available")
-                    .font(.callout)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.blue.opacity(0.1))
-            )
-        }
-        .buttonStyle(.plain)
-        .sheet(isPresented: $showingDetails) {
-            UpdateDetailView(info: info)
-                .environmentObject(appState)
-        }
-    }
-}
 
 struct UpdateDetailView: View {
     let info: UpdateInfo

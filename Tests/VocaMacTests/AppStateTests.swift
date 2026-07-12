@@ -267,23 +267,54 @@ final class AppStateEndpointTests: XCTestCase {
     func testCheckEndpointReachabilitySuccess() async {
         let (appState, mocks) = AppState.makeTestState()
         appState.remoteEndpointURL = "http://192.168.1.10:8000"
-        mocks.transcriptionService.testConnectionResult = .success("Connected · 0.2s")
+        mocks.transcriptionService.checkHealthResult = .success("Online · 0.02s")
 
+        // The automatic reachability check uses the cheap /health probe.
         await appState.checkEndpointReachability()
 
-        XCTAssertEqual(appState.endpointStatus, .reachable("Connected · 0.2s"))
-        XCTAssertEqual(mocks.transcriptionService.testConnectionCallCount, 1)
+        XCTAssertEqual(appState.endpointStatus, .reachable("Online · 0.02s"))
+        XCTAssertEqual(mocks.transcriptionService.checkHealthCallCount, 1)
+        XCTAssertEqual(mocks.transcriptionService.testConnectionCallCount, 0)
     }
 
     @MainActor
     func testCheckEndpointReachabilityFailure() async {
         let (appState, mocks) = AppState.makeTestState()
         appState.remoteEndpointURL = "http://192.168.1.10:9999"
+        mocks.transcriptionService.checkHealthResult = .failure(
+            RemoteTranscriptionError.network(URLError(.cannotConnectToHost))
+        )
+
+        await appState.checkEndpointReachability()
+
+        guard case .unreachable = appState.endpointStatus else {
+            return XCTFail("Expected .unreachable, got \(appState.endpointStatus)")
+        }
+    }
+
+    @MainActor
+    func testTestEndpointConnectionUsesFullValidation() async {
+        let (appState, mocks) = AppState.makeTestState()
+        appState.remoteEndpointURL = "http://192.168.1.10:8000"
+        mocks.transcriptionService.testConnectionResult = .success("Connected · 0.2s")
+
+        // The explicit Test Connection action uses the thorough silent-clip path.
+        await appState.testEndpointConnection()
+
+        XCTAssertEqual(appState.endpointStatus, .reachable("Connected · 0.2s"))
+        XCTAssertEqual(mocks.transcriptionService.testConnectionCallCount, 1)
+        XCTAssertEqual(mocks.transcriptionService.checkHealthCallCount, 0)
+    }
+
+    @MainActor
+    func testTestEndpointConnectionFailureSurfacesError() async {
+        let (appState, mocks) = AppState.makeTestState()
+        appState.remoteEndpointURL = "http://192.168.1.10:9999"
         mocks.transcriptionService.testConnectionResult = .failure(
             RemoteTranscriptionError.httpError(status: 401, body: "")
         )
 
-        await appState.checkEndpointReachability()
+        await appState.testEndpointConnection()
 
         guard case .unreachable(let message) = appState.endpointStatus else {
             return XCTFail("Expected .unreachable, got \(appState.endpointStatus)")

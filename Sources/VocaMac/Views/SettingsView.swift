@@ -371,20 +371,12 @@ struct APIKeyField: View {
                     .textFieldStyle(.roundedBorder)
                     .autocorrectionDisabled()
             } else {
-                Text(text.isEmpty ? placeholder : String(repeating: "•", count: min(text.count, 24)))
-                    .foregroundStyle(text.isEmpty ? .tertiary : .primary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 5)
-                    .padding(.horizontal, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(nsColor: .textBackgroundColor))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color(nsColor: .separatorColor))
-                            )
-                    )
+                // A read-only, natively-styled rounded field showing the masked
+                // value — same bezel as the revealed TextField, no hand-drawn
+                // background and no SecureField AutoFill helper.
+                TextField(placeholder, text: .constant(maskedValue))
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(true)
             }
 
             Button {
@@ -396,6 +388,12 @@ struct APIKeyField: View {
             .buttonStyle(.borderless)
             .help(isRevealed ? "Hide key" : "Reveal key to edit")
         }
+    }
+
+    /// Bullet-masked mirror of the key, capped so a very long key doesn't stretch
+    /// the field. Empty when unset so the placeholder shows through.
+    private var maskedValue: String {
+        text.isEmpty ? "" : String(repeating: "•", count: min(text.count, 24))
     }
 }
 

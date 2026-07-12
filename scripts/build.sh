@@ -8,7 +8,7 @@
 # 3. Code signs — Developer ID if CODE_SIGN_IDENTITY is set, ad-hoc otherwise
 #
 # Environment variables:
-#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 1.0.3.
+#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 1.1.0.
 #                         Set by CI from the release tag.
 #   CODE_SIGN_IDENTITY  — Signing identity to use. Defaults to auto-detect
 #                         Developer ID Application in the login keychain.
@@ -34,7 +34,7 @@ APP_NAME="VocaMac"
 APP_DISPLAY_NAME="VocaMac Lite"
 APP_DIR="${APP_DISPLAY_NAME}.app"
 ENTITLEMENTS="VocaMac.entitlements"
-APP_VERSION="${APP_VERSION:-1.0.3}"
+APP_VERSION="${APP_VERSION:-1.1.0}"
 
 # Resolve signing identity:
 # 1. Use CODE_SIGN_IDENTITY env var if set
