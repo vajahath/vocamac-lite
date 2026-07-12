@@ -6,17 +6,17 @@
 [![Downloads](https://img.shields.io/github/downloads/vajahath/vocamac-lite/total?label=downloads)](https://github.com/vajahath/vocamac-lite/releases)
 [![License: AGPL-3.0](https://img.shields.io/github/license/vajahath/vocamac-lite)](LICENSE)
 
-**Hold a key, speak, and it types — anywhere on your Mac. Your voice is transcribed by a Whisper server *you* run, never the cloud.**
+**Hold a key, speak, and it types — anywhere on your Mac. VocaMac Lite does exactly one thing: capture your voice and send it to the speech-to-text server you point it at.**
 
-An **efficiency-focused fork** of [VocaMac](https://github.com/jatinkrmalik/vocamac) by Jatin Kumar Malik. Huge thanks to the original project — the app, the audio pipeline, and the UX all come from upstream, and this fork simply stands on its shoulders. Where VocaMac runs a Whisper model locally, VocaMac Lite moves all transcription to a remote server so the Mac app itself stays lean.
+An **efficiency-focused fork** of [VocaMac](https://github.com/jatinkrmalik/vocamac) by Jatin Kumar Malik. Huge thanks to the original project — the app, the audio pipeline, and the UX all come from upstream, and this fork simply stands on its shoulders. Where VocaMac runs a Whisper model on the Mac itself, VocaMac Lite offloads transcription to a separate server so the Mac app stays tiny.
 
-Hold a hotkey, speak, and your words are typed wherever your cursor is. Audio is recorded locally (16 kHz mono WAV) and sent to a Whisper server you run — on your LAN box, homelab, or any OpenAI-compatible API. Nothing is transcribed on the Mac itself: no local AI model, no gigabytes of RAM, safe to keep running from login.
+That split is the whole point. The Mac only records audio (16 kHz mono WAV) and POSTs it to a transcription endpoint you configure — there's no AI model on the Mac at all. So you can run a state-of-the-art speech model on whatever hardware suits it best — a Windows PC with a beefy GPU, a homelab box, a spare server — and keep it off your main, RAM-constrained Mac. VocaMac Lite doesn't care where that endpoint lives (LAN, homelab, or a hosted API), only that it speaks the transcription API. Your words are then typed wherever your cursor is.
 
 <p align="center"><img src="demo.png" alt="VocaMac Lite menu bar popover" width="420"></p>
 
 ## Features
 
-- **Remote-only transcription** — the app has a single job: record audio and send it to a Whisper server you control. There's no bundled AI model, so your server does the heavy lifting and the Mac app stays lightweight.
+- **Does one thing** — records your voice and sends it to the transcription server you configure. There's no AI model on the Mac, so a beefier machine (say, a GPU PC) runs the model while the app stays lightweight.
 - **Tiny download** — the DMG is under 5 MB (~2.8 MB).
 
 ## How it works
@@ -69,7 +69,7 @@ The script sets up its own Python environment, downloads the model on first run,
 
 ### Other servers
 
-Any OpenAI-compatible (`POST /v1/audio/transcriptions`) or whisper.cpp (`POST /inference`) server works too — for example Speaches, faster-whisper-server, LocalAI, whisper.cpp's bundled `whisper-server`, or OpenAI's hosted API. Point VocaMac Lite at it in **Settings → Endpoint** and pick the matching format. (With OpenAI's hosted API your audio leaves your network — that's the tradeoff.)
+Any OpenAI-compatible (`POST /v1/audio/transcriptions`) or whisper.cpp (`POST /inference`) server works too — for example Speaches, faster-whisper-server, LocalAI, whisper.cpp's bundled `whisper-server`, or OpenAI's hosted API. Point VocaMac Lite at it in **Settings → Endpoint** and pick the matching format. (If you use OpenAI's hosted API, note the audio goes to OpenAI's servers rather than a machine you run.)
 
 Use the **Test Connection** button in Settings → Endpoint (or the setup wizard) to verify — it sends a short silent clip through the real transcription path.
 
