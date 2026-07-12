@@ -8,7 +8,7 @@
 # 3. Code signs — Developer ID if CODE_SIGN_IDENTITY is set, ad-hoc otherwise
 #
 # Environment variables:
-#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 1.2.0.
+#   APP_VERSION         — Version string to embed in Info.plist. Defaults to 1.2.1.
 #                         Set by CI from the release tag.
 #   CODE_SIGN_IDENTITY  — Signing identity to use. Defaults to auto-detect
 #                         Developer ID Application in the login keychain.
@@ -34,7 +34,7 @@ APP_NAME="VocaMac"
 APP_DISPLAY_NAME="VocaMac Lite"
 APP_DIR="${APP_DISPLAY_NAME}.app"
 ENTITLEMENTS="VocaMac.entitlements"
-APP_VERSION="${APP_VERSION:-1.2.0}"
+APP_VERSION="${APP_VERSION:-1.2.1}"
 
 # Resolve signing identity:
 # 1. Use CODE_SIGN_IDENTITY env var if set
@@ -238,9 +238,14 @@ EOF
 
 echo "🔏 Code signing (${BUNDLE_ID})..."
 
-# Determine codesign options — enable hardened runtime for Developer ID (required for notarization)
+# Determine codesign options. Hardened runtime is only enabled for Developer ID
+# (it's required for notarization). We deliberately do NOT enable it for a
+# self-signed identity: hardened runtime turns on library validation, which can
+# block launch for a non-Apple-Team-ID signature, and it buys nothing without
+# notarization. A plain self-signed signature still gives a stable Designated
+# Requirement, which is all TCC needs to persist permissions across updates.
 CODESIGN_OPTIONS=""
-if [ "$CODE_SIGN_IDENTITY" != "-" ]; then
+if [[ "$CODE_SIGN_IDENTITY" == *"Developer ID"* ]]; then
     CODESIGN_OPTIONS="--options runtime"
 fi
 
