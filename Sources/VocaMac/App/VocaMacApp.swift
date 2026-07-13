@@ -10,16 +10,17 @@ import SwiftUI
 final class SettingsWindowManager: ObservableObject {
     private var settingsWindow: NSWindow?
 
-    func open(appState: AppState) {
-        // If window already exists, just bring it to front
+    func open(appState: AppState, section: SettingsView.Section = .general) {
+        // If window already exists, just bring it to front and switch section.
         if let window = settingsWindow, window.isVisible {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            NotificationCenter.default.post(name: .selectSettingsSection, object: section)
             return
         }
 
         // Create the settings view
-        let settingsView = SettingsView()
+        let settingsView = SettingsView(initialSection: section)
             .environmentObject(appState)
 
         // Create a new window. Resizable so the sidebar/detail split can breathe,
@@ -157,7 +158,7 @@ struct VocaMacApp: App {
                     appState.triggerStartupIfNeeded()
                 }
         }
-        .menuBarExtraStyle(.window)
+        .menuBarExtraStyle(.menu)
     }
 
     @MainActor init() {

@@ -8,6 +8,9 @@ import SwiftUI
 
 extension Notification.Name {
     static let showOnboarding = Notification.Name("com.vocamac.showOnboarding")
+    /// Requests that the Settings window switch to a specific section.
+    /// The section is carried in the notification's `object`.
+    static let selectSettingsSection = Notification.Name("com.vocamac.selectSettingsSection")
 }
 
 struct SettingsView: View {
@@ -23,7 +26,14 @@ struct SettingsView: View {
         var id: String { rawValue }
     }
 
-    @State private var selection: Section = .general
+    @State private var selection: Section
+
+    /// - Parameter initialSection: the section to show when the window first
+    ///   opens. Seeding `@State` here (rather than switching after the fact)
+    ///   avoids a race with the view's subscription on a freshly created window.
+    init(initialSection: Section = .general) {
+        _selection = State(initialValue: initialSection)
+    }
 
     // A plain sidebar + detail split. We deliberately avoid NavigationSplitView:
     // it expects to own the window's toolbar and column-visibility state, which
@@ -47,6 +57,13 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 700, minHeight: 460)
+        // Allow other parts of the app (e.g. the menu bar's "Test Connection")
+        // to switch sections when the window is already open.
+        .onReceive(NotificationCenter.default.publisher(for: .selectSettingsSection)) { note in
+            if let section = note.object as? Section {
+                selection = section
+            }
+        }
     }
 
     @ViewBuilder
